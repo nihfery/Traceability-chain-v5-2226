@@ -91,3 +91,35 @@ npm run dev:server
 npm run build
 npm start
 ```
+
+## Deploy ke Vercel
+
+Project ini siap dipakai sebagai Vite static app + Vercel Functions untuk endpoint `/api/*`.
+
+Pengaturan Vercel:
+
+- Build Command: `npm run build`
+- Output Directory: `dist`
+- Install Command: `npm install`
+- Framework Preset: `Vite`
+
+Isi Environment Variables di Vercel Project Settings, minimal:
+
+```env
+SUPABASE_PROJECT_REF=yunrneklsqjfoklmjeqm
+SUPABASE_URL=https://yunrneklsqjfoklmjeqm.supabase.co
+SUPABASE_PUBLISHABLE_KEY=...
+VITE_SUPABASE_URL=https://yunrneklsqjfoklmjeqm.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=...
+VITE_API_URL=/api
+VITE_SEPOLIA_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com
+VITE_CONTRACT_ADDRESS=...
+CONTRACT_ADDRESS=...
+JWT_SECRET=isi_dengan_secret_panjang
+API_DOCS_PASSWORD=api-docs-admin
+PINATA_JWT=
+PINATA_GATEWAY=
+BLOCK_EXPLORER_URL=https://sepolia.etherscan.io
+```
+
+`VITE_WALLETCONNECT_PROJECT_ID` boleh dikosongkan. Jika kosong, tombol wallet memakai browser wallet seperti MetaMask saja dan tidak memanggil layanan Web3Modal/WalletConnect. Isi dengan project ID valid dari WalletConnect Cloud hanya kalau ingin QR/mobile wallet aktif.

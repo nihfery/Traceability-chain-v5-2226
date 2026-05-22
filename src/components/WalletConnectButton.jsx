@@ -1,8 +1,9 @@
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { AlertTriangle, ChevronDown, LogOut, Wallet } from "lucide-react";
 import { useState } from "react";
-import { useAccount, useConfig, useDisconnect } from "wagmi";
-import { walletStorageKey } from "../web3/config";
+import { useAccount, useConfig, useConnect, useDisconnect, useSwitchChain } from "wagmi";
+import { sepolia } from "wagmi/chains";
+import { walletProjectIdConfigured, walletStorageKey } from "../web3/config";
 
 const SESSION_STORAGE_PREFIXES = ["wc@", "walletconnect", "WALLETCONNECT_"];
 
@@ -53,6 +54,10 @@ async function forgetWalletConnection(config, connector) {
   clearWalletSessionStorage();
 }
 
+function formatAddress(address) {
+  return address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "Wallet";
+}
+
 function DisconnectWalletButton() {
   const { connector } = useAccount();
   const config = useConfig();
@@ -92,6 +97,106 @@ function DisconnectWalletButton() {
   );
 }
 
+function InjectedWalletButton() {
+  const { address, chain, chainId, connector, isConnected } = useAccount();
+  const config = useConfig();
+  const { connectAsync, connectors, isPending: isConnecting } = useConnect();
+  const { disconnectAsync, isPending: isDisconnecting } = useDisconnect();
+  const { switchChainAsync, isPending: isSwitching } = useSwitchChain();
+  const [error, setError] = useState("");
+
+  const injectedConnector =
+    connectors.find((item) => item.id === "injected" || item.type === "injected") || connectors[0];
+  const wrongNetwork = isConnected && chainId && chainId !== sepolia.id;
+
+  const handleConnect = async () => {
+    if (!injectedConnector || isConnecting) return;
+
+    setError("");
+    try {
+      await connectAsync({ connector: injectedConnector });
+    } catch (connectError) {
+      setError(connectError.shortMessage || connectError.message || "Gagal connect wallet");
+    }
+  };
+
+  const handleSwitchChain = async () => {
+    if (!switchChainAsync || isSwitching) return;
+
+    setError("");
+    try {
+      await switchChainAsync({ chainId: sepolia.id });
+    } catch (switchError) {
+      setError(switchError.shortMessage || switchError.message || "Gagal ganti network");
+    }
+  };
+
+  const handleDisconnect = async () => {
+    if (isDisconnecting) return;
+
+    setError("");
+    try {
+      await disconnectAsync(connector ? { connector } : undefined);
+    } catch (disconnectError) {
+      console.warn("Wallet disconnect failed, clearing local session anyway", disconnectError);
+    } finally {
+      await forgetWalletConnection(config, connector);
+    }
+  };
+
+  if (!isConnected) {
+    return (
+      <div className="flex min-w-0 flex-col items-end gap-1">
+        <button className="wallet-chip" disabled={isConnecting} onClick={handleConnect} type="button">
+          <Wallet size={16} />
+          <span className="hidden min-[380px]:inline">{isConnecting ? "Connecting" : "Connect Wallet"}</span>
+          <span className="min-[380px]:hidden">Wallet</span>
+        </button>
+        {error && <span className="max-w-48 truncate text-xs text-rose-600">{error}</span>}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-w-0 flex-col items-end gap-1">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        {wrongNetwork ? (
+          <button
+            className="wallet-chip wallet-chip-warning"
+            disabled={isSwitching}
+            onClick={handleSwitchChain}
+            type="button"
+          >
+            <AlertTriangle size={16} />
+            <span className="hidden sm:inline">{isSwitching ? "Switching" : "Wrong Network"}</span>
+          </button>
+        ) : (
+          <button className="wallet-chip hidden sm:inline-flex" type="button">
+            <Wallet size={15} />
+            <span>{chain?.name || "Sepolia"}</span>
+          </button>
+        )}
+        <button className="wallet-chip wallet-chip-strong" type="button">
+          <Wallet size={16} />
+          <span className="max-w-24 truncate sm:max-w-32">{formatAddress(address)}</span>
+        </button>
+        <button
+          aria-label="Disconnect wallet"
+          className="wallet-chip"
+          disabled={isDisconnecting}
+          onClick={handleDisconnect}
+          title="Disconnect wallet"
+          type="button"
+        >
+          <LogOut size={16} />
+          <span className="hidden sm:inline">{isDisconnecting ? "Disconnecting" : "Disconnect"}</span>
+        </button>
+      </div>
+      {error && <span className="max-w-48 truncate text-xs text-rose-600">{error}</span>}
+    </div>
+  );
+}
+
 function ConnectedWalletControls({ account, chain, openAccountModal, openChainModal }) {
   if (chain.unsupported) {
     return (
@@ -128,6 +233,10 @@ function ConnectedWalletControls({ account, chain, openAccountModal, openChainMo
 }
 
 export default function WalletConnectButton() {
+  if (!walletProjectIdConfigured) {
+    return <InjectedWalletButton />;
+  }
+
   return (
     <ConnectButton.Custom>
       {({
