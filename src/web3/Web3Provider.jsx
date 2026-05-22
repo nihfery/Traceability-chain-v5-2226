@@ -1,9 +1,8 @@
-import { RainbowKitProvider, lightTheme } from "@rainbow-me/rainbowkit";
+import { ConnectKitProvider } from "connectkit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { WagmiProvider } from "wagmi";
-import { sepolia } from "wagmi/chains";
-import { wagmiConfig, walletProjectIdConfigured } from "./config";
+import { defaultChain, wagmiConfig, walletProjectIdConfigured } from "./config";
 
 export function Web3Provider({ children }) {
   const [queryClient] = useState(() => new QueryClient());
@@ -11,22 +10,18 @@ export function Web3Provider({ children }) {
   return (
     <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
       <QueryClientProvider client={queryClient}>
-        {walletProjectIdConfigured ? (
-          <RainbowKitProvider
-            initialChain={sepolia}
-            modalSize="compact"
-            theme={lightTheme({
-              accentColor: "#0f766e",
-              borderRadius: "large",
-              fontStack: "system",
-              overlayBlur: "small",
-            })}
-          >
-            {children}
-          </RainbowKitProvider>
-        ) : (
-          children
-        )}
+        <ConnectKitProvider
+          mode="light"
+          options={{
+            enforceSupportedChains: true,
+            hideBalance: true,
+            initialChainId: defaultChain.id,
+            overlayBlur: 3,
+            walletConnectCTA: walletProjectIdConfigured ? "modal" : "link",
+          }}
+        >
+          {children}
+        </ConnectKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, Blocks, CheckCircle2, ExternalLink, Loader2, Wallet } from "lucide-react";
-import { sepolia } from "wagmi/chains";
 import {
   useAccount,
   useChainId,
@@ -11,6 +10,7 @@ import {
 import api from "../services/api";
 import { shortHash } from "../utils/formatters";
 import { resolveContractAddress, teaTraceabilityAbi } from "../web3/contract";
+import { anchorChain } from "../web3/config";
 import { useLanguage } from "../contexts/LanguageContext";
 
 export default function ManualBlockchainAnchor({ batch, onRecorded }) {
@@ -91,7 +91,7 @@ export default function ManualBlockchainAnchor({ batch, onRecorded }) {
       .post(`/batches/${batch.id}/blockchain`, {
         txHash,
         walletAddress: address,
-        chainId: sepolia.id,
+        chainId: anchorChain.id,
       })
       .then(async () => {
         if (cancelled) return;
@@ -122,8 +122,8 @@ export default function ManualBlockchainAnchor({ batch, onRecorded }) {
     }
 
     try {
-      if (chainId !== sepolia.id) {
-        await switchChainAsync({ chainId: sepolia.id });
+      if (chainId !== anchorChain.id) {
+        await switchChainAsync({ chainId: anchorChain.id });
       }
 
       const hash = await writeContractAsync({
@@ -131,7 +131,7 @@ export default function ManualBlockchainAnchor({ batch, onRecorded }) {
         abi: teaTraceabilityAbi,
         functionName: "storeIpfsCid",
         args: [finalCid],
-        chainId: sepolia.id,
+        chainId: anchorChain.id,
       });
 
       setTxHash(hash);

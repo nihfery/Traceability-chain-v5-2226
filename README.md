@@ -6,7 +6,7 @@ Aplikasi ini sudah disatukan menjadi satu folder dan satu package. Untuk develop
 
 - dashboard paper-style yang responsif
 - tombol **Connect Wallet** di topbar setelah login
-- integrasi **wagmi + RainbowKit** untuk wallet browser dan mobile wallet flow
+- integrasi **wagmi + ConnectKit** untuk wallet browser dan mobile wallet flow
 - batch memakai **dynamic multi-path** tanpa dropdown alur
 - tahap opsional bisa **di-skip dari awal proses**
 - complete/skip ditampung dulu di Supabase
@@ -25,19 +25,19 @@ SUPABASE_PUBLISHABLE_KEY=sb_publishable_X9cN6jY7g9F5UGYmSAxKaQ_S9afPsF3
 VITE_SUPABASE_URL=https://yunrneklsqjfoklmjeqm.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_X9cN6jY7g9F5UGYmSAxKaQ_S9afPsF3
 VITE_API_URL=/api
-VITE_SEPOLIA_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com
+VITE_DEFAULT_CHAIN_ID=11155111
+VITE_ALCHEMY_API_KEY=
 VITE_WALLETCONNECT_PROJECT_ID=
 VITE_CONTRACT_ADDRESS=0xF0c7118276eaC7c4BDaCC7e12b8624057614ef70
 JWT_SECRET=super-secret-key
 API_DOCS_PASSWORD=api-docs-admin
 PINATA_JWT=
 PINATA_GATEWAY=
-CONTRACT_ADDRESS=0xF0c7118276eaC7c4BDaCC7e12b8624057614ef70
 BLOCK_EXPLORER_URL=https://sepolia.etherscan.io
 ```
 
-Isi `VITE_WALLETCONNECT_PROJECT_ID` agar flow WalletConnect/QR untuk mobile wallet aktif penuh.
-Isi `CONTRACT_ADDRESS` dan `VITE_CONTRACT_ADDRESS` dengan kontrak yang memiliki fungsi `storeIpfsCid(string ipfsCid)`. Tidak ada `PRIVATE_KEY`; transaksi Sepolia harus dikonfirmasi manual dari MetaMask owner kontrak.
+Connect wallet memakai UI default ConnectKit. Isi `VITE_WALLETCONNECT_PROJECT_ID` agar flow WalletConnect/QR untuk mobile wallet aktif penuh.
+Isi `VITE_CONTRACT_ADDRESS` dengan kontrak yang memiliki fungsi `storeIpfsCid(string ipfsCid)`. Tidak ada `PRIVATE_KEY`; transaksi Sepolia harus dikonfirmasi manual dari MetaMask owner kontrak.
 
 ## Supabase
 
@@ -112,9 +112,10 @@ SUPABASE_PUBLISHABLE_KEY=...
 VITE_SUPABASE_URL=https://yunrneklsqjfoklmjeqm.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=...
 VITE_API_URL=/api
-VITE_SEPOLIA_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com
+VITE_DEFAULT_CHAIN_ID=11155111
+VITE_ALCHEMY_API_KEY=
+VITE_WALLETCONNECT_PROJECT_ID=
 VITE_CONTRACT_ADDRESS=...
-CONTRACT_ADDRESS=...
 JWT_SECRET=isi_dengan_secret_panjang
 API_DOCS_PASSWORD=api-docs-admin
 PINATA_JWT=
@@ -122,4 +123,7 @@ PINATA_GATEWAY=
 BLOCK_EXPLORER_URL=https://sepolia.etherscan.io
 ```
 
-`VITE_WALLETCONNECT_PROJECT_ID` boleh dikosongkan. Jika kosong, tombol wallet memakai browser wallet seperti MetaMask saja dan tidak memanggil layanan Web3Modal/WalletConnect. Isi dengan project ID valid dari WalletConnect Cloud hanya kalau ingin QR/mobile wallet aktif.
+`VITE_WALLETCONNECT_PROJECT_ID` boleh dikosongkan. Jika kosong, ConnectKit tetap menampilkan wallet browser seperti MetaMask dan Coinbase, tetapi QR/mobile WalletConnect tidak diaktifkan. Isi dengan project ID valid dari WalletConnect Cloud hanya kalau ingin QR/mobile wallet aktif.
+
+Wallet UI mendukung pilihan jaringan Sepolia, Ethereum, Polygon, Base, Arbitrum, dan Optimism. `VITE_DEFAULT_CHAIN_ID` mengatur jaringan awal yang dipilih di modal wallet. Transaksi anchor final tetap dikirim ke Sepolia karena kontrak aplikasi saat ini dikonfigurasi di Sepolia.
+Isi `VITE_ALCHEMY_API_KEY` agar semua RPC jaringan memakai Alchemy secara otomatis.

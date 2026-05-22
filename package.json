@@ -14,10 +14,10 @@
     "supabase:import": "node scripts/import-local-storage-to-supabase.js"
   },
   "dependencies": {
-    "@rainbow-me/rainbowkit": "^2.0.0",
     "@supabase/supabase-js": "^2.106.1",
     "@tanstack/react-query": "^5.0.0",
     "axios": "^1.8.4",
+    "connectkit": "^1.9.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "ethers": "^6.16.0",
