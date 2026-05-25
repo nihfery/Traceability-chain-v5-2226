@@ -44,7 +44,9 @@ export function getJwtSecret() {
   const secret = process.env.JWT_SECRET?.trim() || "";
 
   if (isProductionRuntime() && !isStrongProductionValue(secret, WEAK_JWT_SECRETS, MIN_JWT_SECRET_LENGTH)) {
-    throw createConfigError(`JWT_SECRET wajib diisi dengan secret production minimal ${MIN_JWT_SECRET_LENGTH} karakter.`);
+    throw createConfigError(
+      `JWT_SECRET wajib diisi dengan secret production minimal ${MIN_JWT_SECRET_LENGTH} karakter di Environment Variables hosting.`
+    );
   }
 
   return secret || DEFAULT_DEV_JWT_SECRET;
