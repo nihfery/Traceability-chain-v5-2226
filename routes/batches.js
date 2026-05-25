@@ -14,10 +14,11 @@ import {
 import {
   buildDefaultStages,
   deriveBatchStatus,
+  getStageTemplatesForTeaType,
   LEGACY_WORKFLOW_STAGE_KEYS,
-  MASTER_STAGES,
   STAGE_LABELS,
   STAGE_PREREQUISITES,
+  TEA_TYPE_OPTIONS,
 } from "../utils/constants.js";
 import { uploadJsonToIpfs } from "../services/pinata.js";
 import {
@@ -29,6 +30,21 @@ const router = express.Router();
 
 function isFinalized(stage) {
   return stage?.status === "completed" || stage?.status === "skipped";
+}
+
+function isBlockchainAnchored(batch) {
+  const finalization = batch?.trace?.blockchainFinalization;
+  return finalization?.status === "anchored" && Boolean(finalization.txHash);
+}
+
+function areAllStagesFinalized(stages = []) {
+  return stages.length > 0 && stages.every(isFinalized);
+}
+
+function deriveCurrentBatchStatus(batch) {
+  return deriveBatchStatus(batch?.stages || [], {
+    blockchainAnchored: isBlockchainAnchored(batch),
+  });
 }
 
 function findStage(batch, stageName) {
@@ -62,7 +78,7 @@ function normalizeStage(baseStage = {}, templateStage = {}) {
         ? baseStage.skippable
         : Boolean(templateStage.skippable),
     prerequisiteStages:
-      baseStage.prerequisiteStages || templateStage.prerequisiteStages || STAGE_PREREQUISITES[baseStage.stageName] || [],
+      templateStage.prerequisiteStages || baseStage.prerequisiteStages || STAGE_PREREQUISITES[baseStage.stageName] || [],
     status,
     completed: status === "completed",
     skipped: status === "skipped",
@@ -109,7 +125,8 @@ function refreshAvailableStages(batch) {
 
 function normalizeBatch(batch) {
   const sourceStages = Array.isArray(batch.stages) ? batch.stages : [];
-  const stages = MASTER_STAGES.map((templateStage) => {
+  const templateStages = getStageTemplatesForTeaType(batch.teaType);
+  const stages = templateStages.map((templateStage) => {
     const existing = sourceStages.find((stage) => stage.stageName === templateStage.key) || {};
     const legacyFallback = !Object.keys(existing).length
       ? getLegacySkippedStage(templateStage.key, batch.workflowTemplateId)
@@ -128,7 +145,7 @@ function normalizeBatch(batch) {
   };
 
   refreshAvailableStages(normalized);
-  normalized.status = deriveBatchStatus(normalized.stages);
+  normalized.status = deriveCurrentBatchStatus(normalized);
 
   return normalized;
 }
@@ -155,7 +172,7 @@ async function normalizeAndPersistBatch(batch) {
 }
 
 const FINAL_TRACE_STAGE_NAME = "final_trace_json";
-const FINAL_TRACE_SCHEMA_VERSION = "tea-traceability-final-v3";
+const FINAL_TRACE_SCHEMA_VERSION = "tealabs-final-v3";
 
 function getBlockchainAnchorConfig() {
   const blockchainStatus = getBlockchainStatus();
@@ -193,7 +210,7 @@ function buildFinalTracePayload(batch, operator, timestamp) {
 
   return {
     schemaVersion: FINAL_TRACE_SCHEMA_VERSION,
-    documentType: "tea_traceability_batch_final",
+    documentType: "tealabs_batch_final",
     generatedAt: timestamp,
     generatedBy: operator,
     batch: {
@@ -202,7 +219,7 @@ function buildFinalTracePayload(batch, operator, timestamp) {
       gardenBlock: batch.gardenBlock || null,
       harvestDate: batch.harvestDate || null,
       notes: batch.notes || null,
-      status: batch.status,
+      status: deriveCurrentBatchStatus(batch),
       createdAt: batch.createdAt,
     },
     summary: {
@@ -210,7 +227,7 @@ function buildFinalTracePayload(batch, operator, timestamp) {
       finalizedStages: finalizedStages.length,
       completedStages: completedStages.length,
       skippedStages: skippedStages.length,
-      finalStatus: batch.status,
+      finalStatus: deriveCurrentBatchStatus(batch),
     },
     stages: finalizedStages.map(buildStageJsonRecord),
   };
@@ -236,7 +253,7 @@ function buildStagePayloadMeta(action) {
 async function createFinalTraceJsonIfComplete(batch, operator, options = {}) {
   const force = Boolean(options.force);
 
-  if (batch.status !== "completed") {
+  if (!areAllStagesFinalized(batch.stages)) {
     return batch;
   }
 
@@ -442,7 +459,12 @@ router.get("/public/:id/traceability", async (req, res) => {
       return res.status(404).json({ message: "Traceability tidak ditemukan" });
     }
 
-    return res.json(buildTraceabilityResponse(batch, { hideSkipped: true }));
+    const normalized = normalizeBatch(batch);
+    if (!isBlockchainAnchored(normalized)) {
+      return res.status(404).json({ message: "Traceability publik menunggu transaksi blockchain final" });
+    }
+
+    return res.json(buildTraceabilityResponse(normalized, { hideSkipped: true }));
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -484,6 +506,10 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ message: "batchCode dan teaType wajib diisi" });
     }
 
+    if (!TEA_TYPE_OPTIONS.includes(teaType)) {
+      return res.status(400).json({ message: "Jenis teh tidak valid" });
+    }
+
     const exists = await getBatchByCode(batchCode);
     if (exists) {
       return res.status(400).json({ message: "Kode batch sudah ada" });
@@ -507,7 +533,7 @@ router.post("/", async (req, res) => {
           status: "stored_supabase",
         },
       },
-      stages: buildDefaultStages(),
+      stages: buildDefaultStages(teaType),
     };
 
     await insertBatch(batch);
@@ -618,7 +644,7 @@ router.post("/:id/stages/:stageName", async (req, res) => {
     });
 
     refreshAvailableStages(batch);
-    batch.status = deriveBatchStatus(batch.stages);
+    batch.status = deriveCurrentBatchStatus(batch);
 
     await updateBatch(batch);
     return res.json(await createFinalTraceJsonIfComplete(batch, req.user.name));
@@ -683,7 +709,7 @@ router.post("/:id/stages/:stageName/skip", async (req, res) => {
     });
 
     refreshAvailableStages(batch);
-    batch.status = deriveBatchStatus(batch.stages);
+    batch.status = deriveCurrentBatchStatus(batch);
 
     await updateBatch(batch);
     return res.json(await createFinalTraceJsonIfComplete(batch, req.user.name));
@@ -782,6 +808,7 @@ router.post("/:id/blockchain", async (req, res) => {
         historyId: history.id,
       },
     };
+    batch.status = deriveCurrentBatchStatus(batch);
 
     await updateBatch(batch);
     return res.json(batch);

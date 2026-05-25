@@ -3,11 +3,14 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 import Topbar from "../components/Topbar";
 import api from "../services/api";
 import { useLanguage } from "../contexts/LanguageContext";
+import { useNotifications } from "../contexts/NotificationContext";
 import { TEA_TYPE_OPTIONS } from "../utils/teaFlows";
+import { humanTeaType } from "../utils/formatters";
 
 export default function NewBatchPage() {
   const { openSidebar } = useOutletContext();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
+  const { addNotification } = useNotifications();
   const navigate = useNavigate();
   const [form, setForm] = useState({
     batchCode: "",
@@ -30,6 +33,14 @@ export default function NewBatchPage() {
     setError("");
     try {
       const { data } = await api.post("/batches", form);
+      addNotification({
+        title: t("notifications.batchCreatedTitle"),
+        message: t("notifications.batchCreatedMessage", {
+          batchCode: data.batchCode || form.batchCode,
+        }),
+        to: `/batches/${data.id}`,
+        type: "success",
+      });
       navigate(`/batches/${data.id}`);
     } catch (err) {
       setError(err.response?.data?.message || t("newBatch.error"));
@@ -56,7 +67,7 @@ export default function NewBatchPage() {
               <label className="label">{t("newBatch.type")}</label>
               <select className="input" name="teaType" value={form.teaType} onChange={handleChange}>
                 {TEA_TYPE_OPTIONS.map((teaType) => (
-                  <option key={teaType}>{teaType}</option>
+                  <option key={teaType} value={teaType}>{humanTeaType(teaType, language)}</option>
                 ))}
               </select>
             </div>

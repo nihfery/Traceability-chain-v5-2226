@@ -2,6 +2,7 @@ import cors from "cors";
 import express from "express";
 import authRoutes from "./routes/auth.js";
 import batchRoutes from "./routes/batches.js";
+import notificationRoutes from "./routes/notifications.js";
 import systemRoutes from "./routes/system.js";
 
 export function createApiApp({ enableCors = false } = {}) {
@@ -20,6 +21,7 @@ export function createApiApp({ enableCors = false } = {}) {
   app.use("/api/auth", authRoutes);
   app.use("/api/system", systemRoutes);
   app.use("/api/batches", batchRoutes);
+  app.use("/api/notifications", notificationRoutes);
 
   app.use("/api", (req, res) => {
     res.status(404).json({ message: "API endpoint tidak ditemukan" });

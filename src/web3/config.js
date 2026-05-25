@@ -2,11 +2,11 @@ import { getDefaultConfig } from "connectkit";
 import { createConfig, createStorage, http } from "wagmi";
 import { arbitrum, base, mainnet, optimism, polygon, sepolia } from "wagmi/chains";
 
-const appName = "Tea Traceability Admin";
+const appName = "Tealabs Admin";
 const configuredProjectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID?.trim() || "";
 const alchemyApiKey = import.meta.env.VITE_ALCHEMY_API_KEY?.trim() || "";
 const ignoredProjectIds = new Set(["", "your_project_id", "injected-wallet-only"]);
-export const walletStorageKey = "tea-traceability-wallet";
+export const walletStorageKey = "tealabs-wallet";
 export const supportedChains = [sepolia, mainnet, polygon, base, arbitrum, optimism];
 export const anchorChain = sepolia;
 export const defaultChain =

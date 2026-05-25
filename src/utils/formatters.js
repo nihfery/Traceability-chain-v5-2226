@@ -74,18 +74,27 @@ export function stageStatusText(status, language = "id") {
 
   switch (status) {
     case "completed":
-      return "Tersimpan";
+      return language === "en" ? "Stored" : "Tersimpan";
     case "available":
-      return "Siap diproses";
+      return language === "en" ? "Ready" : "Siap diproses";
     case "skipped":
-      return "Di-skip";
+      return language === "en" ? "Skipped" : "Di-skip";
     default:
-      return "Menunggu";
+      return language === "en" ? "Waiting" : "Menunggu";
   }
 }
 
-export function humanStage(stage) {
-  return {
+const stageLabels = {
+  id: {
+    plucking: "Pemetikan",
+    withering: "Pelayuan",
+    rolling: "Penggulungan",
+    predrying: "Pra-Pengeringan",
+    drying: "Pengeringan",
+    postdrying: "Pasca-Pengeringan",
+    packing: "Pengemasan",
+  },
+  en: {
     plucking: "Plucking",
     withering: "Withering",
     rolling: "Rolling",
@@ -93,11 +102,110 @@ export function humanStage(stage) {
     drying: "Drying",
     postdrying: "Post-Drying",
     packing: "Packing",
-  }[stage] || stage;
+  },
+};
+
+const teaTypeLabels = {
+  id: {
+    "Green Tea": "Teh Hijau",
+    "Yellow Tea": "Teh Kuning",
+    "White Tea": "Teh Putih",
+    "Oolong Tea": "Teh Oolong",
+    "Black Tea": "Teh Hitam",
+    "Dark Tea": "Teh Gelap",
+  },
+  en: {
+    "Green Tea": "Green Tea",
+    "Yellow Tea": "Yellow Tea",
+    "White Tea": "White Tea",
+    "Oolong Tea": "Oolong Tea",
+    "Black Tea": "Black Tea",
+    "Dark Tea": "Dark Tea",
+  },
+};
+
+const fieldLabels = {
+  id: {
+    operatorShift: "Shift Operator",
+    leafGrade: "Grade Daun",
+    weightKg: "Berat (kg)",
+    location: "Lokasi",
+    notes: "Catatan",
+    durationMinutes: "Durasi (menit)",
+    temperature: "Suhu",
+    humidity: "Kelembapan",
+    weightBeforeKg: "Berat Awal (kg)",
+    weightAfterKg: "Berat Akhir (kg)",
+    machineCode: "Kode Mesin",
+    rpm: "RPM",
+    outputKg: "Output (kg)",
+    moisturePercent: "Kadar Air (%)",
+    dryerMachine: "Mesin Pengering",
+    finalMoisturePercent: "Kadar Air Akhir (%)",
+    sortingGrade: "Grade Sortir",
+    qcStatus: "Status QC",
+    aromaNote: "Catatan Aroma",
+    packageType: "Jenis Kemasan",
+    totalPackage: "Total Kemasan",
+    netWeightKg: "Berat Bersih (kg)",
+    warehouseLocation: "Lokasi Gudang",
+  },
+  en: {
+    operatorShift: "Operator Shift",
+    leafGrade: "Leaf Grade",
+    weightKg: "Weight (kg)",
+    location: "Location",
+    notes: "Notes",
+    durationMinutes: "Duration (minutes)",
+    temperature: "Temperature",
+    humidity: "Humidity",
+    weightBeforeKg: "Weight Before (kg)",
+    weightAfterKg: "Weight After (kg)",
+    machineCode: "Machine Code",
+    rpm: "RPM",
+    outputKg: "Output (kg)",
+    moisturePercent: "Moisture (%)",
+    dryerMachine: "Dryer Machine",
+    finalMoisturePercent: "Final Moisture (%)",
+    sortingGrade: "Sorting Grade",
+    qcStatus: "QC Status",
+    aromaNote: "Aroma Note",
+    packageType: "Package Type",
+    totalPackage: "Total Package",
+    netWeightKg: "Net Weight (kg)",
+    warehouseLocation: "Warehouse Location",
+  },
+};
+
+function normalizeStageKey(stage) {
+  return String(stage || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "");
 }
 
-export function humanWorkflowMode() {
-  return "Dynamic Multi-Path";
+function titleCaseField(field) {
+  return String(field || "")
+    .replace(/([A-Z])/g, " $1")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+export function humanStage(stage, language = "id") {
+  const key = normalizeStageKey(stage);
+  return stageLabels[language]?.[key] || stageLabels.en[key] || stage || "-";
+}
+
+export function humanTeaType(teaType, language = "id") {
+  return teaTypeLabels[language]?.[teaType] || teaType || "-";
+}
+
+export function humanFieldLabel(field, language = "id") {
+  return fieldLabels[language]?.[field] || fieldLabels.en[field] || titleCaseField(field);
+}
+
+export function humanWorkflowMode(language = "id") {
+  return language === "en" ? "Dynamic Multi-Path" : "Alur Dinamis Multi-Jalur";
 }
 
 export function getActiveStages(batch) {

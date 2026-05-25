@@ -3,8 +3,8 @@ import api from "../services/api";
 import { useLanguage } from "./LanguageContext";
 
 const AuthContext = createContext(null);
-const TOKEN_KEY = "tea-traceability-token";
-const USER_KEY = "tea-traceability-user";
+const TOKEN_KEY = "tealabs-token";
+const USER_KEY = "tealabs-user";
 
 function readSessionUser() {
   const raw = sessionStorage.getItem(USER_KEY);
@@ -60,8 +60,8 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const handleUnauthorized = () => logout();
-    window.addEventListener("tea-logout", handleUnauthorized);
-    return () => window.removeEventListener("tea-logout", handleUnauthorized);
+    window.addEventListener("tealabs-logout", handleUnauthorized);
+    return () => window.removeEventListener("tealabs-logout", handleUnauthorized);
   }, []);
 
   const value = useMemo(

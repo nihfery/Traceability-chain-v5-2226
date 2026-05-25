@@ -5,11 +5,16 @@ import { getPinataStatus } from "../services/pinata.js";
 import { getAppSetting, getStorageStatus, upsertAppSetting } from "../utils/db.js";
 import { API_DOCS } from "../utils/apiDocs.js";
 import { requireAuth } from "../middleware/auth.js";
+import {
+  getApiDocsFallbackPassword,
+  isConfigError,
+  MIN_API_DOCS_PASSWORD_LENGTH,
+  isProductionRuntime,
+  isWeakApiDocsPassword,
+} from "../utils/env.js";
 
 const router = express.Router();
-const DEFAULT_API_DOCS_PASSWORD = "api-docs-admin";
 const API_DOCS_PASSWORD_KEY = "api_docs_password";
-const MIN_API_DOCS_PASSWORD_LENGTH = 6;
 
 function hashApiDocsPassword(password) {
   const salt = randomUUID();
@@ -20,7 +25,7 @@ function hashApiDocsPassword(password) {
 
 function verifyApiDocsPassword(password, storedValue) {
   if (!storedValue) {
-    return password === DEFAULT_API_DOCS_PASSWORD;
+    return false;
   }
 
   if (!storedValue.startsWith("scrypt:")) {
@@ -50,6 +55,10 @@ async function getApiDocsPasswordSetting() {
   try {
     const setting = await getAppSetting(API_DOCS_PASSWORD_KEY);
     if (setting?.value) {
+      if (isProductionRuntime() && isWeakApiDocsPassword(setting.value)) {
+        throw new Error("Password API Docs di Supabase masih memakai default development.");
+      }
+
       return setting;
     }
   } catch (error) {
@@ -58,10 +67,20 @@ async function getApiDocsPasswordSetting() {
 
   return {
     key: API_DOCS_PASSWORD_KEY,
-    value: process.env.API_DOCS_PASSWORD || DEFAULT_API_DOCS_PASSWORD,
+    value: getApiDocsFallbackPassword(),
     updatedAt: null,
     updatedBy: "env",
   };
+}
+
+function sendSystemError(res, error, fallbackMessage) {
+  console.error(fallbackMessage, error);
+
+  if (isConfigError(error)) {
+    return res.status(503).json({ message: error.message });
+  }
+
+  return res.status(500).json({ message: fallbackMessage });
 }
 
 router.get("/web3-status", (req, res) => {
@@ -73,14 +92,18 @@ router.get("/web3-status", (req, res) => {
 });
 
 router.get("/api-docs", async (req, res) => {
-  const password = req.get("X-API-Docs-Password") || "";
-  const setting = await getApiDocsPasswordSetting();
+  try {
+    const password = req.get("X-API-Docs-Password") || "";
+    const setting = await getApiDocsPasswordSetting();
 
-  if (!verifyApiDocsPassword(password, setting.value)) {
-    return res.status(401).json({ message: "Password API Docs salah" });
+    if (!verifyApiDocsPassword(password, setting.value)) {
+      return res.status(401).json({ message: "Password API Docs salah" });
+    }
+
+    return res.json(API_DOCS);
+  } catch (error) {
+    return sendSystemError(res, error, "Gagal membaca API Docs");
   }
-
-  return res.json(API_DOCS);
 });
 
 router.put("/api-docs/password", requireAuth, async (req, res) => {
@@ -97,7 +120,7 @@ router.put("/api-docs/password", requireAuth, async (req, res) => {
     }
 
     if (newPassword.length < MIN_API_DOCS_PASSWORD_LENGTH) {
-      return res.status(400).json({ message: "Password baru minimal 6 karakter" });
+      return res.status(400).json({ message: `Password baru minimal ${MIN_API_DOCS_PASSWORD_LENGTH} karakter` });
     }
 
     const setting = await getApiDocsPasswordSetting();
@@ -118,6 +141,10 @@ router.put("/api-docs/password", requireAuth, async (req, res) => {
     });
   } catch (error) {
     console.error("Gagal mengubah password API Docs:", error);
+    if (isConfigError(error)) {
+      return res.status(503).json({ message: error.message });
+    }
+
     const missingSchema =
       error.message?.includes("Could not find the table") || error.message?.includes("schema cache");
 

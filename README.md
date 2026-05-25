@@ -1,4 +1,4 @@
-# Tea Traceability
+# Tealabs
 
 Aplikasi ini sudah disatukan menjadi satu folder dan satu package. Untuk development, frontend berjalan langsung dengan Vite supaya HMR aktif dan halaman tidak perlu reload manual. Backend Express tetap tersedia di package yang sama.
 
@@ -15,29 +15,29 @@ Aplikasi ini sudah disatukan menjadi satu folder dan satu package. Untuk develop
 
 ## Env
 
-Copy `.env.example` ke `.env`.
+Copy `.env.example` ke `.env`. Jangan pakai nilai default development untuk production.
 
 ```env
 PORT=5000
 SUPABASE_PROJECT_REF=yunrneklsqjfoklmjeqm
-SUPABASE_URL=https://yunrneklsqjfoklmjeqm.supabase.co
-SUPABASE_PUBLISHABLE_KEY=sb_publishable_X9cN6jY7g9F5UGYmSAxKaQ_S9afPsF3
-VITE_SUPABASE_URL=https://yunrneklsqjfoklmjeqm.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_X9cN6jY7g9F5UGYmSAxKaQ_S9afPsF3
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_PUBLISHABLE_KEY=sb_publishable_your_key
+SUPABASE_SERVICE_ROLE_KEY=
 VITE_API_URL=/api
 VITE_DEFAULT_CHAIN_ID=11155111
 VITE_ALCHEMY_API_KEY=
 VITE_WALLETCONNECT_PROJECT_ID=
-VITE_CONTRACT_ADDRESS=0x9899051fe64e1c1C858b6f53034683E3c05eCf3c
-JWT_SECRET=super-secret-key
-API_DOCS_PASSWORD=api-docs-admin
+VITE_CONTRACT_ADDRESS=0x0000000000000000000000000000000000000000
+JWT_SECRET=replace_with_at_least_32_random_chars
+API_DOCS_PASSWORD=replace_with_strong_docs_password
 PINATA_JWT=
-PINATA_GATEWAY=
+PINATA_GATEWAY=your-gateway.mypinata.cloud
 BLOCK_EXPLORER_URL=https://sepolia.etherscan.io
 ```
 
 Connect wallet memakai UI default ConnectKit. Isi `VITE_WALLETCONNECT_PROJECT_ID` agar flow WalletConnect/QR untuk mobile wallet aktif penuh.
 Isi `VITE_CONTRACT_ADDRESS` dengan kontrak yang memiliki fungsi `storeIpfsCid(string ipfsCid)`. Tidak ada `PRIVATE_KEY`; transaksi Sepolia harus dikonfirmasi manual dari MetaMask.
+Untuk production, isi `JWT_SECRET` minimal 32 karakter dan `API_DOCS_PASSWORD` minimal 12 karakter. Aplikasi akan menolak fallback lemah saat berjalan dalam mode production.
 
 ## Supabase
 
@@ -54,13 +54,7 @@ Push schema:
 supabase db push
 ```
 
-Backend memakai publishable key juga. Karena itu migrasi membuat policy `anon` untuk read/write tabel aplikasi.
-
-Setelah schema sudah dipush, import data JSON lama:
-
-```bash
-npm run supabase:import
-```
+Backend bisa memakai `SUPABASE_SERVICE_ROLE_KEY` untuk operasi API server-side. Jika memakai publishable key, pastikan policy Supabase sudah sesuai dengan kebutuhan akses aplikasi.
 
 ## Jalankan
 
@@ -107,17 +101,16 @@ Isi Environment Variables di Vercel Project Settings, minimal:
 
 ```env
 SUPABASE_PROJECT_REF=yunrneklsqjfoklmjeqm
-SUPABASE_URL=https://yunrneklsqjfoklmjeqm.supabase.co
+SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_PUBLISHABLE_KEY=...
-VITE_SUPABASE_URL=https://yunrneklsqjfoklmjeqm.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
 VITE_API_URL=/api
 VITE_DEFAULT_CHAIN_ID=11155111
 VITE_ALCHEMY_API_KEY=
 VITE_WALLETCONNECT_PROJECT_ID=
 VITE_CONTRACT_ADDRESS=...
 JWT_SECRET=isi_dengan_secret_panjang
-API_DOCS_PASSWORD=api-docs-admin
+API_DOCS_PASSWORD=isi_dengan_password_docs_yang_kuat
 PINATA_JWT=
 PINATA_GATEWAY=
 BLOCK_EXPLORER_URL=https://sepolia.etherscan.io

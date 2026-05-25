@@ -9,6 +9,8 @@ const BATCH_SELECT =
 const HISTORY_SELECT =
   "id,batch_id,batch_code,stage_name,event_type,action,status,operator,reason,payload,data,ipfs_cid,ipfs_url,ipfs_name,tx_hash,tx_url,network,chain_id,contract_address,mock,error_message,recorded_at,created_at";
 const APP_SETTING_SELECT = "key,value,updated_at,updated_by";
+const NOTIFICATION_SELECT =
+  "id,user_id,user_email,title,message,target_path,type,read,created_at,updated_at";
 
 let cachedClient = null;
 let cachedClientKey = null;
@@ -39,7 +41,7 @@ function getConfig() {
 
   if (!url || !supabaseKey) {
     throw new Error(
-      "SUPABASE_URL dan VITE_SUPABASE_PUBLISHABLE_KEY wajib diisi di .env sebelum memakai API."
+      "SUPABASE_URL dan SUPABASE_SERVICE_ROLE_KEY atau SUPABASE_PUBLISHABLE_KEY wajib diisi sebelum memakai API."
     );
   }
 
@@ -136,6 +138,43 @@ function toAppSetting(row) {
     updatedAt: row.updated_at,
     updatedBy: row.updated_by,
   };
+}
+
+function toNotification(row) {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    userId: row.user_id,
+    userEmail: row.user_email,
+    title: row.title,
+    message: row.message || "",
+    to: row.target_path || "",
+    type: row.type || "info",
+    read: Boolean(row.read),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function toNotificationRow(notification) {
+  const row = {
+    user_id: notification.userId,
+    user_email: notification.userEmail || null,
+    title: notification.title,
+    message: notification.message || null,
+    target_path: notification.to || notification.targetPath || null,
+    type: notification.type || "info",
+    read: Boolean(notification.read),
+  };
+
+  if (notification.id) row.id = notification.id;
+  if (notification.createdAt) row.created_at = notification.createdAt;
+  if (notification.updatedAt) row.updated_at = notification.updatedAt;
+
+  return row;
 }
 
 function toHistory(row) {
@@ -247,6 +286,31 @@ export async function findUserByCredentials(email, password) {
   return data || null;
 }
 
+export async function findUserWithPasswordById(id) {
+  const data = unwrapSupabaseResult(
+    await getSupabaseClient()
+      .from("users")
+      .select("id,name,email,password,role")
+      .eq("id", id)
+      .maybeSingle(),
+    "get user by id"
+  );
+
+  return data || null;
+}
+
+export async function updateUserPassword(id, password) {
+  return unwrapSupabaseResult(
+    await getSupabaseClient()
+      .from("users")
+      .update({ password })
+      .eq("id", id)
+      .select("id,name,email,role")
+      .single(),
+    "update user password"
+  );
+}
+
 export async function upsertUser(user) {
   return unwrapSupabaseResult(
     await getSupabaseClient()
@@ -286,6 +350,76 @@ export async function upsertAppSetting(key, value, updatedBy = null) {
   );
 
   return toAppSetting(row);
+}
+
+export async function listNotifications(userId, limit = 40) {
+  const cappedLimit = Math.min(Math.max(Number(limit) || 40, 1), 100);
+  const rows = unwrapSupabaseResult(
+    await getSupabaseClient()
+      .from("notifications")
+      .select(NOTIFICATION_SELECT)
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(cappedLimit),
+    "list notifications"
+  );
+
+  return rows.map(toNotification);
+}
+
+export async function createNotification(notification) {
+  const row = unwrapSupabaseResult(
+    await getSupabaseClient()
+      .from("notifications")
+      .insert(toNotificationRow(notification))
+      .select(NOTIFICATION_SELECT)
+      .single(),
+    "insert notification"
+  );
+
+  return toNotification(row);
+}
+
+export async function markNotificationRead(userId, id) {
+  const row = unwrapSupabaseResult(
+    await getSupabaseClient()
+      .from("notifications")
+      .update({
+        read: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .eq("user_id", userId)
+      .select(NOTIFICATION_SELECT)
+      .maybeSingle(),
+    "mark notification read"
+  );
+
+  return toNotification(row);
+}
+
+export async function markAllNotificationsRead(userId) {
+  const rows = unwrapSupabaseResult(
+    await getSupabaseClient()
+      .from("notifications")
+      .update({
+        read: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", userId)
+      .eq("read", false)
+      .select(NOTIFICATION_SELECT),
+    "mark all notifications read"
+  );
+
+  return rows.map(toNotification);
+}
+
+export async function clearNotifications(userId) {
+  unwrapSupabaseResult(
+    await getSupabaseClient().from("notifications").delete().eq("user_id", userId),
+    "clear notifications"
+  );
 }
 
 export async function listBatches() {

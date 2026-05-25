@@ -108,9 +108,11 @@ export default function ApiDocsPage() {
             <div className="mt-6">
               <label className="label">{t("apiDocs.password")}</label>
               <div className="relative">
-                <KeyRound size={18} className="absolute left-3 top-3.5 text-slate-400" />
+                <span className="login-input-icon left-3">
+                  <KeyRound size={17} />
+                </span>
                 <input
-                  className="input pl-10"
+                  className="input login-input-with-icon"
                   type="password"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
@@ -142,7 +144,7 @@ export default function ApiDocsPage() {
                 </button>
               </div>
 
-              <div className="mt-5 grid gap-3 md:grid-cols-2">
+              <div className="mt-5 grid gap-3 md:grid-cols-3">
                 <div className="surface-muted rounded-[20px] p-4 sm:rounded-[24px]">
                   <div className="inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
                     <Server size={16} />
@@ -157,6 +159,13 @@ export default function ApiDocsPage() {
                   </div>
                   <div className="mt-2 break-all text-sm text-slate-600">{docs.auth?.header}</div>
                   <div className="mt-1 text-xs text-slate-500">{docs.auth?.note}</div>
+                </div>
+                <div className="surface-muted rounded-[20px] p-4 sm:rounded-[24px]">
+                  <div className="inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
+                    <Server size={16} />
+                    {t("apiDocs.baseUrls")}
+                  </div>
+                  <JsonBlock value={docs.baseUrls} />
                 </div>
               </div>
             </div>
@@ -191,7 +200,7 @@ export default function ApiDocsPage() {
                     value={changeForm.newPassword}
                     onChange={(event) => updateChangeForm("newPassword", event.target.value)}
                     autoComplete="new-password"
-                    minLength={6}
+                    minLength={docs.security?.apiDocsPasswordMinLength || 6}
                   />
                 </div>
                 <button className="btn-primary mt-0 gap-2 lg:mt-7" type="submit" disabled={changeLoading}>
@@ -205,6 +214,18 @@ export default function ApiDocsPage() {
                 <div className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{changeMessage}</div>
               )}
             </section>
+
+            <div className="grid gap-5 xl:grid-cols-2">
+              <section className="card p-4 sm:p-6">
+                <h3 className="text-lg font-bold text-slate-900">{t("apiDocs.environmentVariables")}</h3>
+                <JsonBlock value={docs.environmentVariables} />
+              </section>
+
+              <section className="card p-4 sm:p-6">
+                <h3 className="text-lg font-bold text-slate-900">{t("apiDocs.productionChecklist")}</h3>
+                <JsonBlock value={docs.productionChecklist} />
+              </section>
+            </div>
 
             <section className="card p-4 sm:p-6">
               <h3 className="text-lg font-bold text-slate-900">{t("apiDocs.mobileFlow")}</h3>

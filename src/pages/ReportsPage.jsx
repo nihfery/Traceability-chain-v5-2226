@@ -45,7 +45,7 @@ export default function ReportsPage() {
                 <div className="mt-3 grid gap-2 text-xs text-slate-500">
                   <div>
                     <span className="font-semibold text-slate-600">{t("reports.stage")}:</span>{" "}
-                    {humanStage(log.stageName)}
+                    {humanStage(log.stageName, language)}
                   </div>
                   <div>
                     <span className="font-semibold text-slate-600">{t("common.operator")}:</span>{" "}
@@ -79,7 +79,7 @@ export default function ReportsPage() {
                 {logs.map((log, index) => (
                   <tr key={`${log.batchCode}-${log.stageName}-${index}`} className="border-t border-slate-100">
                     <td className="px-5 py-4 font-semibold text-slate-900">{log.batchCode}</td>
-                    <td className="px-5 py-4 text-slate-600">{humanStage(log.stageName)}</td>
+                    <td className="px-5 py-4 text-slate-600">{humanStage(log.stageName, language)}</td>
                     <td className="px-5 py-4 text-slate-600">{log.operator}</td>
                     <td className="px-5 py-4 text-slate-600">{formatDate(log.timestamp, language)}</td>
                     <td className="px-5 py-4 text-xs text-slate-500">{log.txHash ? shortHash(log.txHash) : t("reports.waitingCid")}</td>

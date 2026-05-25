@@ -26,7 +26,12 @@ export const TEA_STAGE_GUIDES = [
 ];
 
 export const TEA_TYPE_OPTIONS = TEA_STAGE_GUIDES.map((guide) => guide.teaType);
+export const DEFAULT_TEA_TYPE = "Black Tea";
 
 export function getTeaStageGuide(teaType) {
-  return TEA_STAGE_GUIDES.find((guide) => guide.teaType === teaType) || TEA_STAGE_GUIDES[0];
+  return (
+    TEA_STAGE_GUIDES.find((guide) => guide.teaType === teaType) ||
+    TEA_STAGE_GUIDES.find((guide) => guide.teaType === DEFAULT_TEA_TYPE) ||
+    TEA_STAGE_GUIDES[0]
+  );
 }

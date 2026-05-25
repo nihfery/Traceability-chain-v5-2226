@@ -36,8 +36,8 @@ export default function DashboardLayout() {
 
         <div
           aria-hidden={!mobileOpen}
-          className={`fixed inset-0 z-40 flex transition lg:hidden ${
-            mobileOpen ? "pointer-events-auto" : "pointer-events-none"
+          className={`fixed inset-0 z-40 flex bg-slate-950/35 backdrop-blur-sm transition duration-300 ease-out lg:hidden ${
+            mobileOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
           }`}
         >
           <div
@@ -48,9 +48,7 @@ export default function DashboardLayout() {
             <Sidebar mobile onClose={() => setMobileOpen(false)} onNavigate={() => setMobileOpen(false)} />
           </div>
           <button
-            className={`flex-1 bg-slate-950/35 backdrop-blur-sm transition-opacity duration-300 ease-out ${
-              mobileOpen ? "opacity-100" : "opacity-0"
-            }`}
+            className="flex-1"
             onClick={() => setMobileOpen(false)}
             type="button"
           />

@@ -22,6 +22,8 @@ export default function TraceabilityQrCode({ batch, className = "" }) {
   const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
   const publicUrl = useMemo(() => getPublicTraceabilityUrl(batch?.id), [batch?.id]);
+  const blockchainFinalization = batch?.trace?.blockchainFinalization;
+  const blockchainAnchored = blockchainFinalization?.status === "anchored" && Boolean(blockchainFinalization.txHash);
 
   const handleCopy = async () => {
     if (!publicUrl || !navigator.clipboard) return;
@@ -30,26 +32,22 @@ export default function TraceabilityQrCode({ batch, className = "" }) {
     window.setTimeout(() => setCopied(false), 1400);
   };
 
-  if (!batch?.id) {
+  if (!batch?.id || !blockchainAnchored) {
     return null;
   }
 
   return (
-    <div className={`rounded-[22px] border border-[#e7ddcf] bg-[rgba(249,246,240,0.92)] p-4 sm:rounded-[24px] ${className}`}>
-      <div className="flex items-start gap-3">
-        <div className="inline-flex rounded-2xl bg-white p-2 text-emerald-700 shadow-sm">
-          <QrCode size={18} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold text-slate-900">{t("qr.title")}</div>
-        </div>
+    <section className={`min-w-0 rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-sm shadow-slate-200/50 sm:p-5 ${className}`}>
+      <div className="mb-4 flex min-w-0 items-center gap-2">
+        <QrCode size={16} className="shrink-0 text-slate-500" />
+        <h3 className="truncate text-sm font-semibold text-slate-950">{t("qr.title")}</h3>
       </div>
 
-      <div className="mt-4 flex flex-col items-stretch gap-4 sm:flex-row sm:items-start">
-        <div className="mx-auto rounded-[18px] border border-[#ded4c6] bg-white p-3 sm:mx-0">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+        <div className="mx-auto rounded-xl border border-slate-200 bg-white p-2 sm:mx-0">
           <QRCodeSVG
             value={publicUrl}
-            size={144}
+            size={132}
             level="M"
             includeMargin
             bgColor="#ffffff"
@@ -57,20 +55,20 @@ export default function TraceabilityQrCode({ batch, className = "" }) {
           />
         </div>
         <div className="min-w-0 flex-1 text-xs text-slate-600">
-          <div className="font-semibold text-slate-800">{batch.batchCode}</div>
-          <div className="mt-2 break-all rounded-2xl bg-white/80 p-3">{publicUrl}</div>
+          <div className="truncate font-semibold text-slate-900">{batch.batchCode}</div>
+          <div className="mt-2 break-all rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">{publicUrl}</div>
           <div className="mt-3 grid gap-2 sm:flex sm:flex-wrap">
             <a
               href={publicUrl}
               target="_blank"
               rel="noreferrer"
-              className="btn-secondary w-full gap-2 !rounded-full !px-4 !py-2.5 !text-xs sm:w-auto"
+              className="btn-secondary w-full gap-2 !rounded-xl !px-3 !py-2.5 !text-xs sm:w-auto"
             >
               <ExternalLink size={14} />
               {t("common.openPublic")}
             </a>
             <button
-              className="btn-secondary w-full gap-2 !rounded-full !px-4 !py-2.5 !text-xs sm:w-auto"
+              className="btn-secondary w-full gap-2 !rounded-xl !px-3 !py-2.5 !text-xs sm:w-auto"
               onClick={handleCopy}
               type="button"
             >
@@ -80,6 +78,6 @@ export default function TraceabilityQrCode({ batch, className = "" }) {
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
+import { NotificationsProvider } from "./contexts/NotificationContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./layouts/DashboardLayout";
 import LoginPage from "./pages/LoginPage";
@@ -14,6 +15,7 @@ import PublicTraceabilityPage from "./pages/PublicTraceabilityPage";
 import ReportsPage from "./pages/ReportsPage";
 import SettingsPage from "./pages/SettingsPage";
 import ApiDocsPage from "./pages/ApiDocsPage";
+import ProfilePage from "./pages/ProfilePage";
 
 const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
@@ -33,6 +35,7 @@ const router = createBrowserRouter([
           { path: "traceability", element: <TraceabilityPage /> },
           { path: "reports", element: <ReportsPage /> },
           { path: "api-docs", element: <ApiDocsPage /> },
+          { path: "profile", element: <ProfilePage /> },
           { path: "settings", element: <SettingsPage /> },
         ],
       },
@@ -45,7 +48,9 @@ export default function App() {
   return (
     <LanguageProvider>
       <AuthProvider>
-        <RouterProvider router={router} />
+        <NotificationsProvider>
+          <RouterProvider router={router} />
+        </NotificationsProvider>
       </AuthProvider>
     </LanguageProvider>
   );

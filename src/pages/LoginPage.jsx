@@ -1,18 +1,34 @@
-import { Leaf, LockKeyhole, Mail } from "lucide-react";
+import {
+  ArrowRight,
+  Eye,
+  EyeOff,
+  KeyRound,
+  MailCheck,
+  ShieldCheck,
+} from "lucide-react";
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
+import LanguageToggle from "../components/LanguageToggle";
+
+const LOGO_SRC = "/logo_tealabs.png";
 
 export default function LoginPage() {
   const { login, loading, isAuthenticated } = useAuth();
   const { t } = useLanguage();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
   }
+
+  const updateForm = (field, value) => {
+    setForm((current) => ({ ...current, [field]: value }));
+    if (error) setError("");
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -21,60 +37,82 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[linear-gradient(135deg,#14352a_0%,#224a3c_46%,#efe7da_46.2%,#f7f2e9_100%)]">
-      <div className="hidden flex-1 items-center justify-center p-10 lg:flex">
-        <div className="max-w-xl text-white">
-          <div className="mb-6 inline-flex rounded-[28px] border border-white/10 bg-white/10 p-4 backdrop-blur">
-            <Leaf size={40} className="text-emerald-200" />
-          </div>
-          <h1 className="text-5xl font-bold leading-tight">{t("login.heading")}</h1>
+    <div className="login-page-shell flex min-h-screen items-center justify-center overflow-hidden px-4 py-6 sm:px-6">
+      <section className="login-glass-card w-full max-w-md p-5 sm:p-7 lg:p-8">
+        <div className="mb-4 flex justify-end">
+          <LanguageToggle />
         </div>
-      </div>
+        <div className="mb-6 text-center sm:mb-7">
+          <div className="mx-auto h-24 w-24 overflow-hidden rounded-[28px] border border-emerald-100 bg-white/90 shadow-lg shadow-emerald-900/10 sm:h-28 sm:w-28">
+            <img
+              src={LOGO_SRC}
+              alt="Tealabs"
+              className="h-full w-full object-cover"
+            />
+          </div>
+          <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50/90 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700">
+            <ShieldCheck size={13} />
+            {t("login.badge")}
+          </div>
+          <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">{t("login.title")}</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-500">{t("login.subtitle")}</p>
+        </div>
 
-      <div className="flex flex-1 items-center justify-center p-4 sm:p-6 lg:p-10">
-        <div className="card-paper w-full max-w-md p-5 sm:p-8">
-          <div className="mb-6 sm:mb-8">
-            <div className="inline-flex rounded-[24px] bg-emerald-100 p-3 text-emerald-700 shadow-sm">
-              <Leaf size={26} />
+        <form className="space-y-5" onSubmit={handleSubmit}>
+          <div>
+            <label className="label">{t("login.email")}</label>
+            <div className="relative">
+              <span className="login-input-icon left-3">
+                <MailCheck size={17} />
+              </span>
+              <input
+                autoComplete="email"
+                className="input login-input-with-icon"
+                placeholder={t("login.emailPlaceholder")}
+                type="email"
+                value={form.email}
+                onChange={(event) => updateForm("email", event.target.value)}
+              />
             </div>
-            <h2 className="mt-4 text-2xl font-bold text-slate-900 sm:text-3xl">{t("login.title")}</h2>
           </div>
 
-          <form className="space-y-5" onSubmit={handleSubmit}>
-            <div>
-              <label className="label">{t("login.email")}</label>
-              <div className="relative">
-                <Mail size={18} className="absolute left-3 top-3.5 text-slate-400" />
-                <input
-                  className="input pl-10"
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
-                />
-              </div>
+          <div>
+            <label className="label">{t("login.password")}</label>
+            <div className="relative">
+              <span className="login-input-icon left-3">
+                <KeyRound size={17} />
+              </span>
+              <input
+                autoComplete="current-password"
+                className="input login-input-with-icon login-input-with-action"
+                placeholder={t("login.passwordPlaceholder")}
+                type={showPassword ? "text" : "password"}
+                value={form.password}
+                onChange={(event) => updateForm("password", event.target.value)}
+              />
+              <button
+                aria-label={showPassword ? t("login.hidePassword") : t("login.showPassword")}
+                className="login-password-toggle"
+                onClick={() => setShowPassword((current) => !current)}
+                type="button"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
+          </div>
 
-            <div>
-              <label className="label">{t("login.password")}</label>
-              <div className="relative">
-                <LockKeyhole size={18} className="absolute left-3 top-3.5 text-slate-400" />
-                <input
-                  className="input pl-10"
-                  type="password"
-                  value={form.password}
-                  onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
-                />
-              </div>
+          {error && (
+            <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+              {error}
             </div>
+          )}
 
-            {error && <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
-
-            <button type="submit" className="btn-primary w-full" disabled={loading}>
-              {loading ? t("common.loading") : t("login.submit")}
-            </button>
-          </form>
-        </div>
-      </div>
+          <button type="submit" className="btn-primary min-h-12 w-full gap-2" disabled={loading}>
+            {loading ? t("common.loading") : t("login.submit")}
+            {!loading && <ArrowRight size={17} />}
+          </button>
+        </form>
+      </section>
     </div>
   );
 }

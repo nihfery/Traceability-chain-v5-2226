@@ -1,11 +1,10 @@
 import {
   Boxes,
   BookOpen,
+  ChevronLeft,
   ClipboardList,
   LayoutDashboard,
-  Leaf,
   LogOut,
-  PanelLeftClose,
   SearchCode,
   Settings,
 } from "lucide-react";
@@ -31,23 +30,26 @@ export default function Sidebar({ mobile = false, onClose, onNavigate }) {
       className={`flex ${mobile ? "h-full w-full rounded-r-[32px]" : "h-screen max-h-screen w-[19rem] rounded-r-[36px]"} flex-col overflow-hidden border-r border-white/10 bg-[linear-gradient(180deg,#183228_0%,#1f4334_36%,#244d3d_100%)] text-slate-100 shadow-2xl shadow-emerald-950/20`}
     >
       <div className="shrink-0 border-b border-white/10 px-6 py-6">
-        <div className="flex items-start justify-between gap-3">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.25em] text-emerald-200 backdrop-blur">
-            <Leaf size={14} />
-            Tea Chain
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="flex min-w-0 items-baseline gap-2 leading-tight text-white">
+              <span className="truncate text-2xl font-bold">TeaLabs</span>
+              <span className="shrink-0 rounded-full border border-white/10 bg-white/10 px-2 py-0.5 text-[10px] font-normal tracking-[0.08em] text-emerald-100/75">
+                v1.26.26
+              </span>
+            </h1>
           </div>
-          {onClose && (
+          {!mobile && onClose && (
             <button
-              className="rounded-2xl border border-white/10 bg-white/10 p-2 text-emerald-50 transition hover:bg-white/15"
+              className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/10 text-emerald-50 transition hover:bg-white/15"
               onClick={onClose}
               title={t("sidebar.close")}
               type="button"
             >
-              <PanelLeftClose size={18} />
+              <ChevronLeft size={18} />
             </button>
           )}
         </div>
-        <h1 className="mt-4 text-2xl font-bold">Traceability Admin</h1>
       </div>
 
       <div className="shrink-0 px-4 py-4">

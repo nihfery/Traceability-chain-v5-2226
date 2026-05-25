@@ -18,31 +18,39 @@ import { useLanguage } from "../contexts/LanguageContext";
 
 function StageIcon({ status }) {
   if (status === "completed") {
-    return <CheckCircle2 size={20} />;
+    return <CheckCircle2 size={16} />;
   }
 
   if (status === "skipped") {
-    return <SkipForward size={20} />;
+    return <SkipForward size={16} />;
   }
 
   if (status === "available") {
-    return <Clock3 size={20} />;
+    return <Clock3 size={16} />;
   }
 
-  return <CircleDotDashed size={20} />;
+  return <CircleDotDashed size={16} />;
 }
 
-function stageIconColor(status) {
+function stageIconClasses(status) {
   switch (status) {
     case "completed":
-      return "text-emerald-600";
+      return "border-emerald-200 bg-emerald-50 text-emerald-700";
     case "skipped":
-      return "text-rose-600";
+      return "border-rose-200 bg-rose-50 text-rose-700";
     case "available":
-      return "text-amber-500";
+      return "border-amber-200 bg-amber-50 text-amber-700";
     default:
-      return "text-slate-300";
+      return "border-slate-200 bg-slate-50 text-slate-400";
   }
+}
+
+function MetaPill({ children }) {
+  return (
+    <span className="inline-flex max-w-full items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-500">
+      <span className="truncate">{children}</span>
+    </span>
+  );
 }
 
 export default function StageTimeline({ stages = [], hideSkipped = false }) {
@@ -50,110 +58,113 @@ export default function StageTimeline({ stages = [], hideSkipped = false }) {
   const visibleStages = hideSkipped ? stages.filter((stage) => stage.status !== "skipped") : stages;
 
   return (
-    <div className="card p-4 sm:p-5 lg:p-6">
-      <div className="mb-5 flex flex-col gap-3 sm:mb-6 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h3 className="text-lg font-bold text-slate-900">{t("timeline.title")}</h3>
-        </div>
-        <div className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 sm:px-4">
-          <GitBranch size={14} />
+    <section className="min-w-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 shadow-sm shadow-slate-200/50">
+      <div className="flex min-w-0 items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 sm:px-5">
+        <h3 className="truncate text-sm font-semibold text-slate-950">{t("timeline.title")}</h3>
+        <div className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold text-slate-600">
+          <GitBranch size={13} />
           {t("timeline.badge")}
         </div>
       </div>
 
-      <div className="space-y-4">
-        {visibleStages.length ? visibleStages.map((stage, index) => {
-          const finalized = stage.status === "completed" || stage.status === "skipped";
+      {visibleStages.length ? (
+        <div className="divide-y divide-slate-200">
+          {visibleStages.map((stage, index) => {
+            const finalized = stage.status === "completed" || stage.status === "skipped";
 
-          return (
-            <div key={stage.stageName} className="flex gap-3 sm:gap-4">
-              <div className="flex w-6 shrink-0 flex-col items-center sm:w-7">
-                <div className={`mt-1 ${stageIconColor(stage.status)}`}>
+            return (
+              <article key={stage.stageName} className="grid min-w-0 grid-cols-[2rem_minmax(0,1fr)] gap-x-3 gap-y-3 px-4 py-4 sm:px-5 md:grid-cols-[2rem_minmax(0,1fr)_auto]">
+                <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-full border ${stageIconClasses(stage.status)}`}>
                   <StageIcon status={stage.status} />
                 </div>
-                {index !== visibleStages.length - 1 && <div className="mt-2 h-full w-px bg-[#dfd5c7]" />}
-              </div>
-              <div className="surface-muted min-w-0 flex-1 rounded-[20px] p-3 sm:rounded-[24px] sm:p-4">
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div className="min-w-0">
-                    <p className="break-words font-semibold text-slate-900">{humanStage(stage.stageName)}</p>
-                    <p className="mt-1 break-words text-xs text-slate-500 sm:text-sm">
-                      {finalized
-                        ? `${stage.operator || t("common.operator")} - ${formatDate(stage.timestamp, language)}`
-                        : stageStatusText(stage.status, language)}
+
+                <div className="min-w-0">
+                  <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+                    <p className="break-words text-sm font-semibold text-slate-950">
+                      {index + 1}. {humanStage(stage.stageName, language)}
                     </p>
-                  </div>
-                  <div>
-                    <span className={stageStatusClasses(stage.status)}>{stageStatusText(stage.status, language)}</span>
-                  </div>
-                </div>
-
-                <div className="mt-3 flex flex-wrap items-center gap-2 break-words text-xs text-slate-500">
-                  {stage.skippable && (
-                    <span className="rounded-full bg-white/80 px-3 py-1 font-medium text-slate-600">{t("timeline.skippable")}</span>
-                  )}
-                  {!!stage.prerequisiteStages?.length && (
-                    <span className="rounded-full bg-white/80 px-3 py-1 font-medium text-slate-500">
-                      {t("timeline.prerequisite", { stages: stage.prerequisiteStages.map((item) => humanStage(item)).join(", ") })}
-                    </span>
-                  )}
-                </div>
-
-                {stage.status === "skipped" && stage.skipReason && (
-                  <div className="mt-3 rounded-2xl bg-rose-50 p-3 text-sm text-rose-700">
-                    <span className="font-medium">{t("timeline.skipReason")}</span> {stage.skipReason}
-                  </div>
-                )}
-
-                {finalized && (
-                  <div className="mt-4 grid gap-3 text-sm text-slate-600 lg:grid-cols-2">
-                    <div className="rounded-2xl bg-white/70 p-3">
-                      <p className="font-medium text-slate-800">{t("timeline.supabaseRecord")}</p>
-                      <p className="mt-1 break-all text-xs">{stage.historyId || "-"}</p>
-                      <p className="mt-2 text-xs text-slate-500">Event: {stage.payload?.eventType || "-"}</p>
-                    </div>
-                    <div className="rounded-2xl bg-white/70 p-3">
-                      <p className="font-medium text-slate-800">{t("timeline.blockchainAnchor")}</p>
-                      <p className="mt-1 break-all text-xs">{stage.txHash || t("timeline.waitingCid")}</p>
+                    <div className="sm:hidden">
+                      <span className={stageStatusClasses(stage.status)}>{stageStatusText(stage.status, language)}</span>
                     </div>
                   </div>
-                )}
 
-                {finalized && (
-                  <div className="mt-4 grid gap-2 sm:flex sm:flex-wrap sm:gap-3">
-                    {stage.ipfsUrl && (
-                      <a
-                        href={stage.ipfsUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="btn-secondary w-full gap-2 !rounded-full !px-4 !py-2.5 !text-xs sm:w-auto"
-                      >
-                        <LinkIcon size={15} />
-                        {shortHash(stage.ipfsCid)}
-                      </a>
-                    )}
-                    {stage.txUrl && (
-                      <a
-                        href={stage.txUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="btn-secondary w-full gap-2 !rounded-full !px-4 !py-2.5 !text-xs sm:w-auto"
-                      >
-                        <ExternalLink size={15} />
-                        {shortHash(stage.txHash)}
-                      </a>
+                  <p className="mt-1 break-words text-xs text-slate-500">
+                    {finalized
+                      ? `${stage.operator || t("common.operator")} - ${formatDate(stage.timestamp, language)}`
+                      : stageStatusText(stage.status, language)}
+                  </p>
+
+                  <div className="mt-3 flex min-w-0 flex-wrap gap-2">
+                    {stage.skippable && <MetaPill>{t("timeline.skippable")}</MetaPill>}
+                    {!!stage.prerequisiteStages?.length && (
+                      <MetaPill>
+                        {t("timeline.prerequisite", { stages: stage.prerequisiteStages.map((item) => humanStage(item, language)).join(", ") })}
+                      </MetaPill>
                     )}
                   </div>
+
+                  {stage.status === "skipped" && stage.skipReason && (
+                    <div className="mt-3 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+                      <span className="font-semibold">{t("timeline.skipReason")}</span> {stage.skipReason}
+                    </div>
+                  )}
+
+                  {finalized && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {stage.ipfsUrl && (
+                        <a
+                          href={stage.ipfsUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="btn-secondary gap-2 !rounded-xl !px-3 !py-2 !text-xs"
+                        >
+                          <LinkIcon size={14} />
+                          {shortHash(stage.ipfsCid)}
+                        </a>
+                      )}
+                      {stage.txUrl && (
+                        <a
+                          href={stage.txUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="btn-secondary gap-2 !rounded-xl !px-3 !py-2 !text-xs"
+                        >
+                          <ExternalLink size={14} />
+                          {shortHash(stage.txHash)}
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="hidden md:block">
+                  <span className={stageStatusClasses(stage.status)}>{stageStatusText(stage.status, language)}</span>
+                </div>
+
+                {finalized && (
+                  <div className="col-start-2 min-w-0 space-y-2 md:col-span-2">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-600">
+                      <p className="font-semibold text-slate-800">{t("timeline.supabaseRecord")}</p>
+                      <p className="mt-1 break-all">{stage.historyId || "-"}</p>
+                      <p className="mt-1 text-slate-500">{t("common.event")}: {stage.payload?.eventType || "-"}</p>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-600">
+                      <p className="font-semibold text-slate-800">{t("timeline.blockchainAnchor")}</p>
+                      <p className={`mt-1 ${stage.txHash ? "break-all" : "break-words"}`}>
+                        {stage.txHash || t("timeline.waitingCid")}
+                      </p>
+                    </div>
+                  </div>
                 )}
-              </div>
-            </div>
-          );
-        }) : (
-          <div className="surface-muted rounded-[24px] p-5 text-sm text-slate-500">
-            {t("timeline.empty")}
-          </div>
-        )}
-      </div>
-    </div>
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="px-4 py-6 text-sm text-slate-500 sm:px-5">
+          {t("timeline.empty")}
+        </div>
+      )}
+    </section>
   );
 }

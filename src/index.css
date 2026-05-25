@@ -76,6 +76,94 @@ body::before {
   box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.12);
 }
 
+.login-page-shell {
+  background:
+    linear-gradient(135deg, rgba(12, 40, 30, 0.96) 0%, rgba(24, 72, 54, 0.9) 43%, rgba(235, 228, 216, 0.94) 43.2%, rgba(249, 244, 236, 0.97) 100%);
+}
+
+.login-page-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 100%),
+    linear-gradient(rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 100%);
+  background-size: 34px 34px;
+  opacity: 0.35;
+}
+
+.login-glass-card {
+  position: relative;
+  border-radius: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.68), rgba(255, 252, 247, 0.46));
+  box-shadow:
+    0 28px 72px rgba(15, 23, 42, 0.2),
+    0 8px 28px rgba(4, 120, 87, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(24px);
+}
+
+.login-glass-card::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.login-input-icon {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  transform: translateY(-50%);
+  place-items: center;
+  border-radius: 0.9rem;
+  color: #047857;
+  background: rgba(236, 253, 245, 0.94);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  pointer-events: none;
+}
+
+.login-input-with-icon {
+  min-height: 3.25rem;
+  padding-left: 4rem;
+}
+
+.login-input-with-action {
+  padding-right: 4rem;
+}
+
+.login-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  transform: translateY(-50%);
+  place-items: center;
+  border-radius: 0.9rem;
+  color: #94a3b8;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.login-password-toggle:hover,
+.login-password-toggle:focus-visible {
+  color: #047857;
+  background: rgba(236, 253, 245, 0.9);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+  outline: none;
+}
+
 .label {
   @apply mb-2 block text-sm font-medium text-slate-700;
 }
@@ -109,8 +197,61 @@ body::before {
   @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold;
 }
 
+.topbar-shell {
+  display: grid;
+  width: 100%;
+  max-width: 80rem;
+  margin: 0 auto;
+  grid-template-columns: 2.75rem minmax(0, 1fr) auto;
+  grid-template-areas:
+    "menu brand actions"
+    "title title title";
+  align-items: center;
+  column-gap: 0.5rem;
+  row-gap: 0.35rem;
+}
+
+.topbar-menu {
+  grid-area: menu;
+}
+
+.topbar-brand {
+  grid-area: brand;
+}
+
+.topbar-title {
+  grid-area: title;
+}
+
+.topbar-heading {
+  font-size: 1.125rem;
+  line-height: 1.15;
+}
+
+.topbar-actions {
+  grid-area: actions;
+  display: grid;
+  grid-template-columns: auto 2.75rem 2.75rem;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.topbar-actions .wallet-chip {
+  width: 2.75rem;
+  height: 2.75rem;
+  gap: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
 .sidebar-toggle-button {
-  width: 3rem;
+  display: inline-grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  padding: 0;
+  line-height: 1;
   opacity: 1;
   transform: translateX(0);
   transition:
@@ -123,7 +264,50 @@ body::before {
     background-color 160ms ease;
 }
 
+@media (min-width: 640px) {
+  .topbar-heading {
+    font-size: 1.35rem;
+  }
+
+  .topbar-actions {
+    display: flex;
+    width: auto;
+    min-width: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+
+  .topbar-actions .wallet-chip {
+    width: auto;
+    height: 2.75rem;
+    gap: 0.5rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .wallet-chip-label {
+    display: inline;
+  }
+}
+
 @media (min-width: 1024px) {
+  .topbar-shell {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "menu title actions";
+    column-gap: 0.75rem;
+    row-gap: 0.25rem;
+  }
+
+  .topbar-brand {
+    display: none;
+  }
+
+  .topbar-heading {
+    font-size: 1.45rem;
+    line-height: 1.1;
+  }
+
   .main-shell[data-sidebar-open="true"] .sidebar-toggle-button {
     width: 0;
     margin-right: -0.75rem;
@@ -138,7 +322,7 @@ body::before {
 }
 
 .wallet-chip {
-  @apply inline-flex min-w-0 items-center gap-2 rounded-full px-3 py-2.5 text-sm font-semibold text-slate-700 transition sm:px-4;
+  @apply inline-flex min-w-0 items-center justify-center rounded-full text-sm font-semibold text-slate-700 transition;
   border: 1px solid #ddd0bf;
   background: rgba(255, 255, 255, 0.88);
   box-shadow:
@@ -150,6 +334,21 @@ body::before {
   background: rgba(255, 252, 247, 0.96);
 }
 
+.wallet-chip-label {
+  display: none;
+}
+
+.wallet-chip-connect {
+  width: auto;
+  min-width: 4.75rem;
+  padding-left: 0.85rem;
+  padding-right: 0.85rem;
+}
+
+.wallet-chip-connect .wallet-chip-label {
+  display: inline;
+}
+
 .wallet-chip-strong {
   color: #0f172a;
   background: linear-gradient(180deg, rgba(255, 252, 247, 0.95), rgba(251, 247, 240, 0.95));
@@ -159,6 +358,28 @@ body::before {
   color: #9a3412;
   border-color: rgba(251, 191, 36, 0.55);
   background: rgba(255, 247, 237, 0.95);
+}
+
+@media (max-width: 420px) {
+  .card {
+    border-radius: 18px;
+  }
+
+  .card-paper {
+    border-radius: 20px;
+  }
+
+  .btn,
+  .btn-primary,
+  .btn-secondary {
+    min-height: 2.75rem;
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
+  }
+
+  .input {
+    border-radius: 14px;
+  }
 }
 
 @media (min-width: 640px) {

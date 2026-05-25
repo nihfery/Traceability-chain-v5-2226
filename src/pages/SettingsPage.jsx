@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Languages, PlugZap, Smartphone } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
+import LanguageToggle from "../components/LanguageToggle";
 import Topbar from "../components/Topbar";
 import api from "../services/api";
 import { walletProjectIdConfigured } from "../web3/config";
@@ -8,8 +9,13 @@ import { useLanguage } from "../contexts/LanguageContext";
 
 export default function SettingsPage() {
   const { openSidebar } = useOutletContext();
-  const { language, languageLabels, setLanguage, t } = useLanguage();
+  const { t } = useLanguage();
   const [status, setStatus] = useState(null);
+
+  const transactionMode =
+    status?.blockchain?.transactionMode === "manual_metamask"
+      ? t("settings.manualMetamask")
+      : status?.blockchain?.transactionMode || "-";
 
   useEffect(() => {
     api
@@ -34,20 +40,7 @@ export default function SettingsPage() {
               <h3 className="text-lg font-bold">{t("settings.languageTitle")}</h3>
             </div>
           </div>
-          <div className="mt-4 grid w-full grid-cols-2 rounded-2xl border border-[#ddd0bf] bg-white/80 p-1 sm:inline-grid sm:w-auto">
-            {Object.entries(languageLabels).map(([value, label]) => (
-              <button
-                key={value}
-                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                  language === value ? "bg-emerald-700 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
-                }`}
-                onClick={() => setLanguage(value)}
-                type="button"
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          <LanguageToggle className="mt-4 w-full sm:w-auto" />
         </div>
 
         <div className="card p-4 sm:p-6">
@@ -78,9 +71,9 @@ export default function SettingsPage() {
               <div className="font-semibold text-slate-900">Blockchain</div>
               <div className="mt-1">{status?.blockchain?.enabled ? t("dashboard.metamaskReady") : t("common.inactive")}</div>
               <div className="mt-2 text-xs text-slate-500">{t("common.network")}: {status?.blockchain?.network || "sepolia"}</div>
-              <div className="mt-1 text-xs text-slate-500">Chain ID: {status?.blockchain?.chainId || "11155111"}</div>
+              <div className="mt-1 text-xs text-slate-500">{t("common.chainId")}: {status?.blockchain?.chainId || "11155111"}</div>
               <div className="mt-1 break-all text-xs text-slate-500">{t("common.contract")}: {status?.blockchain?.contractAddress || "-"}</div>
-              <div className="mt-1 text-xs text-slate-500">{t("common.mode")}: {status?.blockchain?.transactionMode || "manual_metamask"}</div>
+              <div className="mt-1 text-xs text-slate-500">{t("common.mode")}: {transactionMode}</div>
             </div>
           </div>
         </div>

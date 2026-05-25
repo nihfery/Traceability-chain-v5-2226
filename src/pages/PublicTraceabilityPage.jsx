@@ -11,7 +11,9 @@ import {
 import api from "../services/api";
 import {
   formatDate,
+  humanFieldLabel,
   humanStage,
+  humanTeaType,
   shortHash,
   stageStatusClasses,
   stageStatusText,
@@ -20,17 +22,21 @@ import {
 } from "../utils/formatters";
 import { useLanguage } from "../contexts/LanguageContext";
 
-function formatFieldLabel(field) {
-  return field
-    .replace(/([A-Z])/g, " $1")
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
 function formatValue(value) {
   if (value === null || typeof value === "undefined" || value === "") return "-";
   if (typeof value === "object") return JSON.stringify(value);
   return String(value);
+}
+
+function blockchainStatusText(status, t) {
+  const keys = {
+    anchored: "blockchainStatus.anchored",
+    awaiting_wallet_signature: "blockchainStatus.awaitingWallet",
+    pending: "blockchainStatus.pending",
+    failed: "blockchainStatus.failed",
+  };
+
+  return keys[status] ? t(keys[status]) : status || t("publicTrace.notAnchored");
 }
 
 function PublicStageTimeline({ stages = [] }) {
@@ -61,7 +67,7 @@ function PublicStageTimeline({ stages = [] }) {
               <div className="surface-muted min-w-0 flex-1 rounded-[20px] p-3 sm:rounded-[24px] sm:p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
-                    <p className="break-words font-semibold text-slate-900">{humanStage(stage.stageName)}</p>
+                    <p className="break-words font-semibold text-slate-900">{humanStage(stage.stageName, language)}</p>
                     <p className="mt-1 break-words text-xs text-slate-500 sm:text-sm">
                       {completed
                         ? `${stage.operator || t("common.operator")} - ${formatDate(stage.recordedAt, language)}`
@@ -75,7 +81,7 @@ function PublicStageTimeline({ stages = [] }) {
                   <div className="mt-4 grid gap-3 lg:grid-cols-2">
                     {entries.map(([field, value]) => (
                       <div key={field} className="rounded-2xl bg-white/75 p-3 text-sm">
-                        <div className="text-xs font-semibold uppercase text-slate-500">{formatFieldLabel(field)}</div>
+                        <div className="text-xs font-semibold uppercase text-slate-500">{humanFieldLabel(field, language)}</div>
                         <div className="mt-1 break-words font-semibold text-slate-900">{formatValue(value)}</div>
                       </div>
                     ))}
@@ -151,7 +157,7 @@ export default function PublicTraceabilityPage() {
             </div>
             <h1 className="mt-4 break-words text-2xl font-bold tracking-tight text-slate-900 sm:mt-5 sm:text-3xl lg:text-4xl">{batch.batchCode}</h1>
             <p className="mt-3 break-words text-sm text-slate-600">
-              {batch.teaType} - {batch.gardenBlock || t("publicTrace.gardenMissing")}
+              {humanTeaType(batch.teaType, language)} - {batch.gardenBlock || t("publicTrace.gardenMissing")}
             </p>
           </div>
           <span className={`${statusClasses(batch.status)} w-fit shrink-0`}>{statusText(batch.status, language)}</span>
@@ -171,7 +177,7 @@ export default function PublicTraceabilityPage() {
             <div className="mt-2 font-semibold text-slate-900">{summary.completedStages}</div>
           </div>
           <div className="surface-muted rounded-[20px] p-4 sm:rounded-[22px]">
-            <div className="text-xs font-semibold uppercase text-slate-500">Final CID</div>
+            <div className="text-xs font-semibold uppercase text-slate-500">{t("common.finalCid")}</div>
             <div className="mt-2 break-all text-xs font-semibold text-slate-900">
               {shortHash(finalTrace?.ipfsCid || blockchainFinalization?.finalCid)}
             </div>
@@ -188,7 +194,7 @@ export default function PublicTraceabilityPage() {
                 className="btn-secondary w-full gap-2 !rounded-full !px-4 !py-2.5 !text-xs sm:w-auto"
               >
                 <FileJson size={14} />
-                JSON Pinata
+                {t("common.jsonPinata")}
               </a>
             )}
             {blockchainFinalization?.txUrl && (
@@ -216,21 +222,21 @@ export default function PublicTraceabilityPage() {
           <h2 className="mt-4 text-lg font-bold text-slate-900">{t("publicTrace.blockchainValidation")}</h2>
           <div className="mt-5 space-y-3 text-sm text-slate-600">
             <div className="surface-muted rounded-[20px] p-4 sm:rounded-[22px]">
-              <div className="text-xs font-semibold uppercase text-slate-500">Status</div>
-              <div className="mt-2 font-semibold text-slate-900">{blockchainFinalization?.status || t("publicTrace.notAnchored")}</div>
+              <div className="text-xs font-semibold uppercase text-slate-500">{t("common.status")}</div>
+              <div className="mt-2 font-semibold text-slate-900">{blockchainStatusText(blockchainFinalization?.status, t)}</div>
             </div>
             <div className="surface-muted rounded-[20px] p-4 sm:rounded-[22px]">
-              <div className="text-xs font-semibold uppercase text-slate-500">Network</div>
+              <div className="text-xs font-semibold uppercase text-slate-500">{t("common.network")}</div>
               <div className="mt-2 font-semibold text-slate-900">{blockchainFinalization?.network || "sepolia"}</div>
             </div>
             <div className="surface-muted rounded-[20px] p-4 sm:rounded-[22px]">
-              <div className="text-xs font-semibold uppercase text-slate-500">Tx Hash</div>
+              <div className="text-xs font-semibold uppercase text-slate-500">{t("common.txHash")}</div>
               <div className="mt-2 break-all text-xs font-semibold text-slate-900">
                 {blockchainFinalization?.txHash || "-"}
               </div>
             </div>
             <div className="surface-muted rounded-[20px] p-4 sm:rounded-[22px]">
-              <div className="text-xs font-semibold uppercase text-slate-500">Contract</div>
+              <div className="text-xs font-semibold uppercase text-slate-500">{t("common.contract")}</div>
               <div className="mt-2 break-all text-xs font-semibold text-slate-900">
                 {blockchainFinalization?.contractAddress || "-"}
               </div>
