@@ -28,7 +28,7 @@ VITE_API_URL=/api
 VITE_DEFAULT_CHAIN_ID=11155111
 VITE_ALCHEMY_API_KEY=
 VITE_WALLETCONNECT_PROJECT_ID=
-VITE_CONTRACT_ADDRESS=0xF0c7118276eaC7c4BDaCC7e12b8624057614ef70
+VITE_CONTRACT_ADDRESS=0x9899051fe64e1c1C858b6f53034683E3c05eCf3c
 JWT_SECRET=super-secret-key
 API_DOCS_PASSWORD=api-docs-admin
 PINATA_JWT=
@@ -37,7 +37,7 @@ BLOCK_EXPLORER_URL=https://sepolia.etherscan.io
 ```
 
 Connect wallet memakai UI default ConnectKit. Isi `VITE_WALLETCONNECT_PROJECT_ID` agar flow WalletConnect/QR untuk mobile wallet aktif penuh.
-Isi `VITE_CONTRACT_ADDRESS` dengan kontrak yang memiliki fungsi `storeIpfsCid(string ipfsCid)`. Tidak ada `PRIVATE_KEY`; transaksi Sepolia harus dikonfirmasi manual dari MetaMask owner kontrak.
+Isi `VITE_CONTRACT_ADDRESS` dengan kontrak yang memiliki fungsi `storeIpfsCid(string ipfsCid)`. Tidak ada `PRIVATE_KEY`; transaksi Sepolia harus dikonfirmasi manual dari MetaMask.
 
 ## Supabase
 

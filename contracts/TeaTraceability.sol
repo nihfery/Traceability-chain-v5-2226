@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+contract TeaTraceability {
 
-contract TeaTraceability is Ownable {
     struct IpfsRecord {
         string ipfsCid;
         uint256 timestamp;
@@ -18,9 +17,7 @@ contract TeaTraceability is Ownable {
         address indexed actor
     );
 
-    constructor(address initialOwner) Ownable(initialOwner) {}
-
-    function storeIpfsCid(string memory ipfsCid) external onlyOwner {
+    function storeIpfsCid(string memory ipfsCid) external {
         require(bytes(ipfsCid).length > 0, "CID required");
 
         ipfsRecords.push(
@@ -31,15 +28,28 @@ contract TeaTraceability is Ownable {
             })
         );
 
-        emit IpfsCidStored(ipfsCid, block.timestamp, msg.sender);
+        emit IpfsCidStored(
+            ipfsCid,
+            block.timestamp,
+            msg.sender
+        );
     }
 
-    function getIpfsCidCount() external view returns (uint256) {
+    function getIpfsCidCount()
+        external
+        view
+        returns (uint256)
+    {
         return ipfsRecords.length;
     }
 
-    function getIpfsCid(uint256 index) external view returns (IpfsRecord memory) {
+    function getIpfsCid(uint256 index)
+        external
+        view
+        returns (IpfsRecord memory)
+    {
         require(index < ipfsRecords.length, "CID not found");
+
         return ipfsRecords[index];
     }
 }

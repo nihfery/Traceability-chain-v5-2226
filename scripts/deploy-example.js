@@ -4,7 +4,7 @@ async function main() {
   console.log("Deploying with:", deployer.address);
 
   const Factory = await ethers.getContractFactory("TeaTraceability");
-  const contract = await Factory.deploy(deployer.address);
+  const contract = await Factory.deploy();
   await contract.waitForDeployment();
 
   console.log("TeaTraceability deployed to:", await contract.getAddress());
