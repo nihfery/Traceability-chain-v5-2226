@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import api from "../services/api";
 import { useLanguage } from "./LanguageContext";
+import { getApiErrorMessage } from "../utils/apiErrors";
 
 const AuthContext = createContext(null);
 const TOKEN_KEY = "tealabs-token";
@@ -23,7 +24,7 @@ function readSessionUser() {
 }
 
 export function AuthProvider({ children }) {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [user, setUser] = useState(readSessionUser);
   const [loading, setLoading] = useState(false);
 
@@ -43,7 +44,7 @@ export function AuthProvider({ children }) {
     } catch (error) {
       return {
         ok: false,
-        message: error.response?.data?.message || t("login.error"),
+        message: getApiErrorMessage(error, language, t("login.error")),
       };
     } finally {
       setLoading(false);
@@ -72,7 +73,7 @@ export function AuthProvider({ children }) {
       logout,
       isAuthenticated: Boolean(user),
     }),
-    [user, loading, t]
+    [user, loading, language, t]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

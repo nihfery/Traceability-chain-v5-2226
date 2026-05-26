@@ -29,6 +29,7 @@ import {
 } from "../utils/formatters";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useNotifications } from "../contexts/NotificationContext";
+import { getApiErrorMessage } from "../utils/apiErrors";
 
 function Panel({ title, action, children, className = "" }) {
   return (
@@ -322,7 +323,7 @@ export default function BatchDetailPage() {
       setSkipReason("");
       await loadBatch();
     } catch (error) {
-      setActionError(error.response?.data?.message || t("batchDetail.skipStage"));
+      setActionError(getApiErrorMessage(error, language, t("batchDetail.skipStage")));
     } finally {
       setActionLoading("");
     }

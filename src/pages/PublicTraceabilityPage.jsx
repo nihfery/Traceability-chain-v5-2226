@@ -21,6 +21,7 @@ import {
   statusText,
 } from "../utils/formatters";
 import { useLanguage } from "../contexts/LanguageContext";
+import { getApiErrorMessage } from "../utils/apiErrors";
 
 function formatValue(value) {
   if (value === null || typeof value === "undefined" || value === "") return "-";
@@ -117,14 +118,14 @@ export default function PublicTraceabilityPage() {
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(err.response?.data?.message || t("publicTrace.notFound"));
+          setError(getApiErrorMessage(err, language, t("publicTrace.notFound")));
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [id, t]);
+  }, [id, language, t]);
 
   if (error) {
     return (

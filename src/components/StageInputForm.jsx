@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../services/api";
 import { humanFieldLabel, humanStage } from "../utils/formatters";
+import { getApiErrorMessage } from "../utils/apiErrors";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useNotifications } from "../contexts/NotificationContext";
 
@@ -58,7 +59,7 @@ export default function StageInputForm({
       });
       await onSubmitted?.();
     } catch (err) {
-      setError(err.response?.data?.message || t("stageForm.error"));
+      setError(getApiErrorMessage(err, language, t("stageForm.error")));
     } finally {
       setLoading(false);
     }

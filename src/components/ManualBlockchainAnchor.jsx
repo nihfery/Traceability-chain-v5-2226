@@ -7,12 +7,14 @@ import {
   useWaitForTransactionReceipt,
   useWriteContract,
 } from "wagmi";
+import { formatUnits } from "viem";
 import api from "../services/api";
 import { shortHash } from "../utils/formatters";
 import { resolveContractAddress, teaTraceabilityAbi } from "../web3/contract";
 import { anchorChain } from "../web3/config";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useNotifications } from "../contexts/NotificationContext";
+import { getApiErrorMessage, translateApiMessage } from "../utils/apiErrors";
 
 function DataBlock({ label, children }) {
   return (
@@ -23,8 +25,40 @@ function DataBlock({ label, children }) {
   );
 }
 
+function toBigIntOrNull(value) {
+  if (value === null || typeof value === "undefined") {
+    return null;
+  }
+
+  try {
+    const parsed = typeof value === "bigint" ? value : BigInt(String(value));
+    return parsed >= 0n ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function buildTransactionCost(receipt) {
+  const gasUsed = toBigIntOrNull(receipt?.gasUsed);
+  const effectiveGasPriceWei = toBigIntOrNull(receipt?.effectiveGasPrice);
+  const gasFeeWei = gasUsed !== null && effectiveGasPriceWei !== null ? gasUsed * effectiveGasPriceWei : null;
+
+  if (gasUsed === null && effectiveGasPriceWei === null && gasFeeWei === null) {
+    return null;
+  }
+
+  return {
+    gasUsed: gasUsed?.toString() || null,
+    effectiveGasPriceWei: effectiveGasPriceWei?.toString() || null,
+    gasFeeWei: gasFeeWei?.toString() || null,
+    gasFeeEth: gasFeeWei !== null ? formatUnits(gasFeeWei, 18) : null,
+    nativeCurrencySymbol: anchorChain.nativeCurrency?.symbol || "ETH",
+    source: "wallet_receipt",
+  };
+}
+
 export default function ManualBlockchainAnchor({ batch, onRecorded }) {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const { addNotification } = useNotifications();
   const [systemStatus, setSystemStatus] = useState(null);
   const [txHash, setTxHash] = useState("");
@@ -59,7 +93,7 @@ export default function ManualBlockchainAnchor({ batch, onRecorded }) {
       return t("manualAnchor.batchIncomplete");
     }
     if (finalTrace?.status === "failed") {
-      return finalTrace.errorMessage || t("manualAnchor.pinataFailed");
+      return translateApiMessage(finalTrace.errorMessage, language, t("manualAnchor.pinataFailed"));
     }
     if (finalTrace?.mock?.ipfs) {
       return t("manualAnchor.pinataMock");
@@ -74,9 +108,10 @@ export default function ManualBlockchainAnchor({ batch, onRecorded }) {
       return t("manualAnchor.walletMissing");
     }
     return "";
-  }, [contractAddress, finalCid, finalTrace, isConnected, stagesFinalized, t]);
+  }, [contractAddress, finalCid, finalTrace, isConnected, language, stagesFinalized, t]);
 
   const {
+    data: receipt,
     error: receiptError,
     isError: receiptFailed,
     isSuccess: receiptSuccess,
@@ -107,6 +142,7 @@ export default function ManualBlockchainAnchor({ batch, onRecorded }) {
         txHash,
         walletAddress: address,
         chainId: anchorChain.id,
+        transactionCost: buildTransactionCost(receipt),
       })
       .then(async () => {
         if (cancelled) return;
@@ -123,7 +159,7 @@ export default function ManualBlockchainAnchor({ batch, onRecorded }) {
       })
       .catch((err) => {
         if (cancelled) return;
-        setError(err.response?.data?.message || t("manualAnchor.recordFailed"));
+        setError(getApiErrorMessage(err, language, t("manualAnchor.recordFailed")));
       })
       .finally(() => {
         if (!cancelled) {
@@ -134,7 +170,7 @@ export default function ManualBlockchainAnchor({ batch, onRecorded }) {
     return () => {
       cancelled = true;
     };
-  }, [addNotification, address, batch?.batchCode, batch?.id, onRecorded, receiptSuccess, recordedHash, t, txHash]);
+  }, [addNotification, address, batch?.batchCode, batch?.id, language, onRecorded, receipt, receiptSuccess, recordedHash, t, txHash]);
 
   const handleAnchor = async () => {
     setError("");

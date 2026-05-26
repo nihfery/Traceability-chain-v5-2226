@@ -39,12 +39,12 @@ export function statusText(status, language = "id") {
   const labels = {
     id: {
       completed: "Selesai",
-      in_progress: "Berjalan",
+      in_progress: "Sedang berjalan",
       draft: "Draft",
     },
     en: {
       completed: "Completed",
-      in_progress: "In Progress",
+      in_progress: "In progress",
       draft: "Draft",
     },
   };
@@ -57,7 +57,7 @@ export function stageStatusText(status, language = "id") {
     id: {
       completed: "Tersimpan",
       available: "Siap diproses",
-      skipped: "Di-skip",
+      skipped: "Dilewati",
       pending: "Menunggu",
     },
     en: {
@@ -78,7 +78,7 @@ export function stageStatusText(status, language = "id") {
     case "available":
       return language === "en" ? "Ready" : "Siap diproses";
     case "skipped":
-      return language === "en" ? "Skipped" : "Di-skip";
+      return language === "en" ? "Skipped" : "Dilewati";
     default:
       return language === "en" ? "Waiting" : "Menunggu";
   }
@@ -206,6 +206,21 @@ export function humanFieldLabel(field, language = "id") {
 
 export function humanWorkflowMode(language = "id") {
   return language === "en" ? "Dynamic Multi-Path" : "Alur Dinamis Multi-Jalur";
+}
+
+export function humanRole(role, language = "id") {
+  const labels = {
+    id: {
+      admin: "Admin",
+      operator: "Operator",
+    },
+    en: {
+      admin: "Admin",
+      operator: "Operator",
+    },
+  };
+
+  return labels[language]?.[role] || labels.en[role] || role || "-";
 }
 
 export function getActiveStages(batch) {

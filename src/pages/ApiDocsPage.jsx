@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { BookOpen, KeyRound, LockKeyhole, Save, Server } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 import Topbar from "../components/Topbar";
 import api from "../services/api";
 import { useLanguage } from "../contexts/LanguageContext";
+import { getApiErrorMessage, translateApiMessage } from "../utils/apiErrors";
 
 const methodClasses = {
   GET: "bg-sky-100 text-sky-800",
@@ -51,7 +52,7 @@ function EndpointCode({ children, compact = false }) {
 
 export default function ApiDocsPage() {
   const { openSidebar } = useOutletContext();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [password, setPassword] = useState("");
   const [docs, setDocs] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -60,6 +61,17 @@ export default function ApiDocsPage() {
   const [changeLoading, setChangeLoading] = useState(false);
   const [changeError, setChangeError] = useState("");
   const [changeMessage, setChangeMessage] = useState("");
+  const activeDocs = useMemo(() => {
+    if (!docs) {
+      return null;
+    }
+
+    if (docs.localizations) {
+      return docs.localizations[language] || docs.localizations.id || docs;
+    }
+
+    return docs;
+  }, [docs, language]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -78,7 +90,7 @@ export default function ApiDocsPage() {
       setPassword("");
     } catch (err) {
       setDocs(null);
-      setError(err.response?.data?.message || t("apiDocs.unlockFailed"));
+      setError(getApiErrorMessage(err, language, t("apiDocs.unlockFailed")));
     } finally {
       setLoading(false);
     }
@@ -103,10 +115,10 @@ export default function ApiDocsPage() {
 
     try {
       const response = await api.put("/system/api-docs/password", changeForm);
-      setChangeMessage(response.data?.message || t("apiDocs.changePasswordSuccess"));
+      setChangeMessage(translateApiMessage(response.data?.message, language, t("apiDocs.changePasswordSuccess")));
       setChangeForm({ currentPassword: "", newPassword: "" });
     } catch (err) {
-      setChangeError(err.response?.data?.message || t("apiDocs.changePasswordFailed"));
+      setChangeError(getApiErrorMessage(err, language, t("apiDocs.changePasswordFailed")));
     } finally {
       setChangeLoading(false);
     }
@@ -117,7 +129,7 @@ export default function ApiDocsPage() {
       <Topbar title={t("apiDocs.title")} onOpenMenu={openSidebar} />
 
       <div className="min-w-0 space-y-4 overflow-x-hidden p-2.5 sm:p-4 lg:space-y-6 lg:p-8">
-        {!docs ? (
+        {!activeDocs ? (
           <form className="card-paper mx-auto max-w-xl overflow-hidden p-4 sm:p-6 lg:p-8" onSubmit={handleSubmit}>
             <div className="flex items-start gap-3">
               <div className="shrink-0 rounded-2xl bg-emerald-50 p-2 text-emerald-700">
@@ -160,8 +172,8 @@ export default function ApiDocsPage() {
                     <BookOpen size={14} />
                     <span className="truncate">{t("apiDocs.badge")}</span>
                   </div>
-                  <h2 className="mt-4 break-words text-xl font-bold text-slate-900 sm:text-2xl">{docs.title}</h2>
-                  <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">{docs.mobileAccess}</p>
+                  <h2 className="mt-4 break-words text-xl font-bold text-slate-900 sm:text-2xl">{activeDocs.title}</h2>
+                  <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">{activeDocs.mobileAccess}</p>
                 </div>
                 <button className="btn-secondary w-full sm:w-auto" type="button" onClick={resetDocsLock}>
                   {t("apiDocs.lockAgain")}
@@ -174,22 +186,22 @@ export default function ApiDocsPage() {
                     <Server size={16} />
                     {t("apiDocs.basePath")}
                   </div>
-                  <div className="mt-2 break-all text-sm text-slate-600">{docs.basePath}</div>
+                  <div className="mt-2 break-all text-sm text-slate-600">{activeDocs.basePath}</div>
                 </SurfacePanel>
                 <SurfacePanel>
                   <div className="inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
                     <KeyRound size={16} />
                     {t("apiDocs.auth")}
                   </div>
-                  <div className="mt-2 break-all text-sm text-slate-600">{docs.auth?.header}</div>
-                  <div className="mt-1 text-xs text-slate-500">{docs.auth?.note}</div>
+                  <div className="mt-2 break-all text-sm text-slate-600">{activeDocs.auth?.header}</div>
+                  <div className="mt-1 text-xs text-slate-500">{activeDocs.auth?.note}</div>
                 </SurfacePanel>
                 <SurfacePanel>
                   <div className="inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
                     <Server size={16} />
                     {t("apiDocs.baseUrls")}
                   </div>
-                  <JsonBlock value={docs.baseUrls} />
+                  <JsonBlock value={activeDocs.baseUrls} />
                 </SurfacePanel>
               </div>
             </div>
@@ -224,7 +236,7 @@ export default function ApiDocsPage() {
                     value={changeForm.newPassword}
                     onChange={(event) => updateChangeForm("newPassword", event.target.value)}
                     autoComplete="new-password"
-                    minLength={docs.security?.apiDocsPasswordMinLength || 6}
+                    minLength={activeDocs.security?.apiDocsPasswordMinLength || 6}
                   />
                 </div>
                 <button className="btn-primary mt-0 gap-2 lg:mt-7" type="submit" disabled={changeLoading}>
@@ -242,19 +254,19 @@ export default function ApiDocsPage() {
             <div className="grid gap-5 xl:grid-cols-2">
               <SectionCard>
                 <h3 className="text-lg font-bold text-slate-900">{t("apiDocs.environmentVariables")}</h3>
-                <JsonBlock value={docs.environmentVariables} />
+                <JsonBlock value={activeDocs.environmentVariables} />
               </SectionCard>
 
               <SectionCard>
                 <h3 className="text-lg font-bold text-slate-900">{t("apiDocs.productionChecklist")}</h3>
-                <JsonBlock value={docs.productionChecklist} />
+                <JsonBlock value={activeDocs.productionChecklist} />
               </SectionCard>
             </div>
 
             <SectionCard>
               <h3 className="text-lg font-bold text-slate-900">{t("apiDocs.mobileFlow")}</h3>
               <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {docs.mobileFlow?.map((step) => (
+                {activeDocs.mobileFlow?.map((step) => (
                   <div key={step.order} className="min-w-0 overflow-hidden rounded-[18px] border border-[#e7ddcf] bg-[rgba(249,246,240,0.92)] p-3 sm:rounded-[22px] sm:p-4">
                     <div className="flex min-w-0 items-start gap-2">
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-xs font-bold text-white">
@@ -274,32 +286,32 @@ export default function ApiDocsPage() {
             <div className="grid gap-5 xl:grid-cols-2">
               <SectionCard>
                 <h3 className="text-lg font-bold text-slate-900">{t("apiDocs.enums")}</h3>
-                <JsonBlock value={docs.enums} />
+                <JsonBlock value={activeDocs.enums} />
               </SectionCard>
 
               <SectionCard>
                 <h3 className="text-lg font-bold text-slate-900">{t("apiDocs.commonErrors")}</h3>
-                <JsonBlock value={docs.commonErrors} />
+                <JsonBlock value={activeDocs.commonErrors} />
               </SectionCard>
 
               <SectionCard>
                 <h3 className="text-lg font-bold text-slate-900">{t("apiDocs.productionFlows")}</h3>
-                <JsonBlock value={docs.productionFlows} />
+                <JsonBlock value={activeDocs.productionFlows} />
               </SectionCard>
 
               <SectionCard>
                 <h3 className="text-lg font-bold text-slate-900">{t("apiDocs.stageFields")}</h3>
-                <JsonBlock value={docs.stageFieldTemplates} />
+                <JsonBlock value={activeDocs.stageFieldTemplates} />
               </SectionCard>
             </div>
 
             <SectionCard>
               <h3 className="text-lg font-bold text-slate-900">{t("apiDocs.responseModels")}</h3>
-              <JsonBlock value={docs.responseModels} />
+              <JsonBlock value={activeDocs.responseModels} />
             </SectionCard>
 
             <div className="space-y-5">
-              {docs.groups?.map((group) => (
+              {activeDocs.groups?.map((group) => (
                 <SectionCard key={group.title}>
                   <h3 className="text-lg font-bold text-slate-900">{group.title}</h3>
                   <p className="mt-1 text-sm leading-6 text-slate-500">{group.description}</p>

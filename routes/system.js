@@ -1,9 +1,11 @@
 import express from "express";
 import { randomUUID, scryptSync, timingSafeEqual } from "crypto";
 import { getBlockchainStatus } from "../services/blockchain.js";
+import { getEtherscanStatus } from "../services/etherscan.js";
+import { getEthMarketRates } from "../services/marketRates.js";
 import { getPinataStatus } from "../services/pinata.js";
 import { getAppSetting, getStorageStatus, upsertAppSetting } from "../utils/db.js";
-import { API_DOCS } from "../utils/apiDocs.js";
+import { API_DOCS_LOCALIZATIONS } from "../utils/apiDocs.js";
 import { requireAuth } from "../middleware/auth.js";
 import {
   getApiDocsFallbackPassword,
@@ -83,12 +85,26 @@ function sendSystemError(res, error, fallbackMessage) {
   return res.status(500).json({ message: fallbackMessage });
 }
 
+function getRequestLanguage(req) {
+  const language = String(req.get("Accept-Language") || "").toLowerCase();
+  return language.startsWith("en") ? "en" : "id";
+}
+
 router.get("/web3-status", (req, res) => {
   res.json({
     storage: getStorageStatus(),
     blockchain: getBlockchainStatus(),
+    etherscan: getEtherscanStatus(),
     ipfs: getPinataStatus(),
   });
+});
+
+router.get("/market-rates", async (req, res) => {
+  try {
+    res.json(await getEthMarketRates({ refresh: req.query.refresh === "true" }));
+  } catch (error) {
+    res.status(502).json({ message: error.message });
+  }
 });
 
 router.get("/api-docs", async (req, res) => {
@@ -100,7 +116,14 @@ router.get("/api-docs", async (req, res) => {
       return res.status(401).json({ message: "Password API Docs salah" });
     }
 
-    return res.json(API_DOCS);
+    const language = getRequestLanguage(req);
+    const localizedDocs = API_DOCS_LOCALIZATIONS[language] || API_DOCS_LOCALIZATIONS.id;
+
+    return res.json({
+      ...localizedDocs,
+      language,
+      localizations: API_DOCS_LOCALIZATIONS,
+    });
   } catch (error) {
     return sendSystemError(res, error, "Gagal membaca API Docs");
   }

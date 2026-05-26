@@ -15,6 +15,7 @@ import WalletConnectButton from "./WalletConnectButton";
 import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useNotifications } from "../contexts/NotificationContext";
+import { humanRole } from "../utils/formatters";
 
 function getInitials(name = "", email = "") {
   const source = name || email || "User";
@@ -115,7 +116,7 @@ export default function Topbar({
         </button>
 
         <div className="topbar-brand min-w-0">
-          <div className="inline-flex h-9 max-w-full items-center truncate rounded-full border border-[#e6dccd] bg-white/80 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6f7d6d] shadow-sm sm:h-auto sm:px-3 sm:py-1 sm:text-[11px] sm:tracking-[0.22em]">
+          <div className="topbar-brand-badge">
             Tealabs
           </div>
         </div>
@@ -247,7 +248,7 @@ export default function Topbar({
               </span>
               <span className="hidden min-w-0 sm:block">
                 <span className="block max-w-32 truncate text-xs font-semibold text-slate-900">{user?.name || t("topbar.myProfile")}</span>
-                <span className="block max-w-32 truncate text-[11px] text-slate-500">{user?.role || t("common.active")}</span>
+                <span className="block max-w-32 truncate text-[11px] text-slate-500">{humanRole(user?.role, language) || t("common.active")}</span>
               </span>
               <ChevronDown size={14} className={`hidden shrink-0 text-slate-500 transition sm:block ${profileOpen ? "rotate-180" : ""}`} />
             </button>
@@ -265,7 +266,7 @@ export default function Topbar({
                     </div>
                   </div>
                   <div className="mt-3 inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                    {user?.role || t("common.active")}
+                    {humanRole(user?.role, language) || t("common.active")}
                   </div>
                 </div>
 

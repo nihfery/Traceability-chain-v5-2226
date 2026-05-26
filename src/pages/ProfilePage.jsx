@@ -12,6 +12,8 @@ import Topbar from "../components/Topbar";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
+import { humanRole } from "../utils/formatters";
+import { getApiErrorMessage, translateApiMessage } from "../utils/apiErrors";
 
 function ProfileInfo({ icon: Icon, label, value }) {
   return (
@@ -69,7 +71,7 @@ function ResetWarningModal({ loading, onCancel, onConfirm, t }) {
 export default function ProfilePage() {
   const { openSidebar } = useOutletContext();
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [form, setForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -125,10 +127,10 @@ export default function ProfilePage() {
         confirmPassword: "",
       });
       setConfirmOpen(false);
-      setSuccess(data?.message || t("profile.passwordSuccess"));
+      setSuccess(translateApiMessage(data?.message, language, t("profile.passwordSuccess")));
     } catch (err) {
       setConfirmOpen(false);
-      setError(err.response?.data?.message || t("profile.passwordFailed"));
+      setError(getApiErrorMessage(err, language, t("profile.passwordFailed")));
     } finally {
       setLoading(false);
     }
@@ -165,7 +167,7 @@ export default function ProfilePage() {
             <div className="mt-5 grid gap-3">
               <ProfileInfo icon={UserRound} label={t("profile.name")} value={user?.name} />
               <ProfileInfo icon={Mail} label={t("profile.email")} value={user?.email} />
-              <ProfileInfo icon={Shield} label={t("profile.role")} value={user?.role} />
+              <ProfileInfo icon={Shield} label={t("profile.role")} value={humanRole(user?.role, language)} />
             </div>
           </section>
 

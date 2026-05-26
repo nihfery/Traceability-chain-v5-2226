@@ -6,6 +6,7 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { useNotifications } from "../contexts/NotificationContext";
 import { TEA_TYPE_OPTIONS } from "../utils/teaFlows";
 import { humanTeaType } from "../utils/formatters";
+import { getApiErrorMessage } from "../utils/apiErrors";
 
 export default function NewBatchPage() {
   const { openSidebar } = useOutletContext();
@@ -43,7 +44,7 @@ export default function NewBatchPage() {
       });
       navigate(`/batches/${data.id}`);
     } catch (err) {
-      setError(err.response?.data?.message || t("newBatch.error"));
+      setError(getApiErrorMessage(err, language, t("newBatch.error")));
     } finally {
       setLoading(false);
     }

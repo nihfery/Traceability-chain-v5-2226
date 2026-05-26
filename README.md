@@ -33,6 +33,7 @@ API_DOCS_PASSWORD=replace_with_strong_docs_password
 PINATA_JWT=
 PINATA_GATEWAY=your-gateway.mypinata.cloud
 BLOCK_EXPLORER_URL=https://sepolia.etherscan.io
+ETHERSCAN_API_KEY=
 ```
 
 Connect wallet memakai UI default ConnectKit. Isi `VITE_WALLETCONNECT_PROJECT_ID` agar flow WalletConnect/QR untuk mobile wallet aktif penuh.
@@ -114,9 +115,12 @@ API_DOCS_PASSWORD=isi_dengan_password_docs_yang_kuat
 PINATA_JWT=
 PINATA_GATEWAY=
 BLOCK_EXPLORER_URL=https://sepolia.etherscan.io
+ETHERSCAN_API_KEY=
 ```
 
 `VITE_WALLETCONNECT_PROJECT_ID` boleh dikosongkan. Jika kosong, ConnectKit tetap menampilkan wallet browser seperti MetaMask dan Coinbase, tetapi QR/mobile WalletConnect tidak diaktifkan. Isi dengan project ID valid dari WalletConnect Cloud hanya kalau ingin QR/mobile wallet aktif.
 
 Wallet UI mendukung pilihan jaringan Sepolia, Ethereum, Polygon, Base, Arbitrum, dan Optimism. `VITE_DEFAULT_CHAIN_ID` mengatur jaringan awal yang dipilih di modal wallet. Transaksi anchor final tetap dikirim ke Sepolia karena kontrak aplikasi saat ini dikonfigurasi di Sepolia.
 Isi `VITE_ALCHEMY_API_KEY` agar semua RPC jaringan memakai Alchemy secara otomatis.
+Isi `ETHERSCAN_API_KEY` agar dashboard bisa mengambil gas fee batch completed dari receipt transaksi Etherscan.
+Konversi gas fee ke USD dan Rupiah ditarik otomatis dari CoinGecko dan di-refresh berkala oleh dashboard.

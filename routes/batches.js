@@ -25,6 +25,10 @@ import {
   getBlockchainStatus,
   getTxUrl,
 } from "../services/blockchain.js";
+import {
+  fetchTransactionCostFromEtherscan,
+  getEtherscanStatus,
+} from "../services/etherscan.js";
 
 const router = express.Router();
 
@@ -37,6 +41,10 @@ function isBlockchainAnchored(batch) {
   return finalization?.status === "anchored" && Boolean(finalization.txHash);
 }
 
+function isCompletedAnchoredBatch(batch) {
+  return batch?.status === "completed" && isBlockchainAnchored(batch);
+}
+
 function areAllStagesFinalized(stages = []) {
   return stages.length > 0 && stages.every(isFinalized);
 }
@@ -45,6 +53,123 @@ function deriveCurrentBatchStatus(batch) {
   return deriveBatchStatus(batch?.stages || [], {
     blockchainAnchored: isBlockchainAnchored(batch),
   });
+}
+
+function cleanText(value) {
+  if (value === null || typeof value === "undefined") {
+    return null;
+  }
+
+  const text = String(value).trim();
+  return text || null;
+}
+
+function cleanUnsignedInteger(value) {
+  const text = cleanText(value);
+  return text && /^\d+$/.test(text) ? text : null;
+}
+
+function cleanDecimal(value) {
+  const text = cleanText(value);
+  return text && /^\d+(\.\d+)?$/.test(text) ? text : null;
+}
+
+function formatWeiToEthString(wei) {
+  try {
+    const weiValue = BigInt(wei);
+    const weiPerEth = 10n ** 18n;
+    const whole = weiValue / weiPerEth;
+    const fraction = weiValue % weiPerEth;
+    const fractionText = fraction.toString().padStart(18, "0").replace(/0+$/, "");
+    return fractionText ? `${whole}.${fractionText}` : whole.toString();
+  } catch {
+    return null;
+  }
+}
+
+function normalizeTransactionCost(body = {}) {
+  const source =
+    body.transactionCost && typeof body.transactionCost === "object"
+      ? body.transactionCost
+      : body;
+  const gasUsed = cleanUnsignedInteger(source.gasUsed);
+  const effectiveGasPriceWei = cleanUnsignedInteger(
+    source.effectiveGasPriceWei ?? source.gasPriceWei
+  );
+  let gasFeeWei = cleanUnsignedInteger(
+    source.gasFeeWei ?? source.transactionFeeWei ?? source.feeWei
+  );
+
+  if (!gasFeeWei && gasUsed && effectiveGasPriceWei) {
+    gasFeeWei = (BigInt(gasUsed) * BigInt(effectiveGasPriceWei)).toString();
+  }
+
+  const gasFeeEth =
+    cleanDecimal(source.gasFeeEth ?? source.transactionFeeEth ?? source.feeEth) ||
+    (gasFeeWei ? formatWeiToEthString(gasFeeWei) : null);
+  const nativeCurrencySymbol = cleanText(source.nativeCurrencySymbol ?? source.currencySymbol) || "ETH";
+  const sourceName = cleanText(source.source) || "wallet_receipt";
+  const fetchedAt = cleanText(source.fetchedAt);
+
+  if (!gasUsed && !effectiveGasPriceWei && !gasFeeWei && !gasFeeEth) {
+    return null;
+  }
+
+  return {
+    gasUsed,
+    effectiveGasPriceWei,
+    gasFeeWei,
+    gasFeeEth,
+    nativeCurrencySymbol,
+    source: sourceName,
+    fetchedAt,
+  };
+}
+
+function buildCompletedGasFeeRow(batch, transactionCost, errorMessage = "") {
+  const finalization = batch.trace?.blockchainFinalization || {};
+  const finalTrace = batch.trace?.finalTrace || {};
+
+  return {
+    id: batch.id,
+    batchCode: batch.batchCode,
+    teaType: batch.teaType,
+    status: batch.status,
+    anchoredAt: finalization.anchoredAt || null,
+    finalCid: finalization.finalCid || finalTrace.ipfsCid || null,
+    txHash: finalization.txHash || null,
+    txUrl: finalization.txUrl || null,
+    network: finalization.network || "sepolia",
+    chainId: finalization.chainId || getBlockchainStatus().chainId,
+    transactionCost: transactionCost || null,
+    errorMessage: errorMessage || null,
+  };
+}
+
+async function resolveBatchTransactionCost(batch, options = {}) {
+  const finalization = batch.trace?.blockchainFinalization || {};
+  const cachedCost = finalization.transactionCost || null;
+
+  if (!options.refresh && cachedCost?.source === "etherscan") {
+    return { transactionCost: cachedCost, updated: false };
+  }
+
+  const blockchainStatus = getBlockchainStatus();
+  const transactionCost = await fetchTransactionCostFromEtherscan(finalization.txHash, {
+    chainId: finalization.chainId || blockchainStatus.chainId,
+    nativeCurrencySymbol: "ETH",
+  });
+
+  batch.trace = {
+    ...(batch.trace || {}),
+    blockchainFinalization: {
+      ...finalization,
+      transactionCost,
+    },
+  };
+  await updateBatch(batch);
+
+  return { transactionCost, updated: true };
 }
 
 function findStage(batch, stageName) {
@@ -445,6 +570,7 @@ function buildTraceabilityResponse(batch, options = {}) {
           chainId: blockchainFinalization.chainId || null,
           contractAddress: blockchainFinalization.contractAddress || null,
           anchoredAt: blockchainFinalization.anchoredAt || null,
+          transactionCost: blockchainFinalization.transactionCost || null,
         }
       : null,
     stages: visibleStages.map(buildTraceabilityStage),
@@ -480,6 +606,62 @@ router.get("/", async (req, res) => {
     res.json(normalized);
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+router.get("/completed-gas-fees", async (req, res) => {
+  try {
+    const refresh = req.query.refresh === "true";
+    const etherscan = getEtherscanStatus();
+    const batches = await listBatches();
+    const normalized = await Promise.all(batches.map((batch) => normalizeAndPersistBatch(batch)));
+    const completedBatches = normalized
+      .filter(isCompletedAnchoredBatch)
+      .sort(
+        (left, right) =>
+          new Date(right.trace?.blockchainFinalization?.anchoredAt || right.createdAt) -
+          new Date(left.trace?.blockchainFinalization?.anchoredAt || left.createdAt)
+      );
+
+    if (!etherscan.enabled) {
+      return res.json({
+        source: "etherscan",
+        etherscan,
+        count: completedBatches.length,
+        rows: completedBatches.map((batch) =>
+          buildCompletedGasFeeRow(
+            batch,
+            batch.trace?.blockchainFinalization?.transactionCost || null,
+            "ETHERSCAN_API_KEY belum dikonfigurasi."
+          )
+        ),
+      });
+    }
+
+    const rows = [];
+    for (const batch of completedBatches) {
+      try {
+        const { transactionCost } = await resolveBatchTransactionCost(batch, { refresh });
+        rows.push(buildCompletedGasFeeRow(batch, transactionCost));
+      } catch (error) {
+        rows.push(
+          buildCompletedGasFeeRow(
+            batch,
+            batch.trace?.blockchainFinalization?.transactionCost || null,
+            error.message
+          )
+        );
+      }
+    }
+
+    return res.json({
+      source: "etherscan",
+      etherscan,
+      count: rows.length,
+      rows,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 });
 
@@ -720,7 +902,8 @@ router.post("/:id/stages/:stageName/skip", async (req, res) => {
 
 router.post("/:id/blockchain", async (req, res) => {
   try {
-    const { txHash, walletAddress, chainId } = req.body;
+    const body = req.body || {};
+    const { txHash, walletAddress, chainId } = body;
     const cleanTxHash = typeof txHash === "string" ? txHash.trim() : "";
 
     if (!cleanTxHash) {
@@ -745,6 +928,8 @@ router.post("/:id/blockchain", async (req, res) => {
     const effectiveChainId = Number(chainId || blockchainStatus.chainId);
     const effectiveContractAddress = blockchainStatus.contractAddress;
     const txUrl = getTxUrl(cleanTxHash);
+    const transactionCost =
+      normalizeTransactionCost(body) || batch.trace?.blockchainFinalization?.transactionCost || null;
     const payload = {
       eventType: "final_cid_anchored",
       batchId: batch.id,
@@ -758,6 +943,7 @@ router.post("/:id/blockchain", async (req, res) => {
       txHash: cleanTxHash,
       txUrl,
       walletAddress: walletAddress || null,
+      transactionCost,
       meta: {
         blockchain: {
           ...blockchainStatus,
@@ -766,6 +952,7 @@ router.post("/:id/blockchain", async (req, res) => {
           transactionMode: "manual_metamask",
           payloadMode: "pinata_cid_only",
         },
+        transactionCost,
         action: "manual_wallet_anchor",
       },
     };
@@ -804,6 +991,7 @@ router.post("/:id/blockchain", async (req, res) => {
         contractAddress: effectiveContractAddress,
         walletAddress: walletAddress || null,
         transactionMode: "manual_metamask",
+        transactionCost,
         anchoredAt: recordedAt,
         historyId: history.id,
       },
