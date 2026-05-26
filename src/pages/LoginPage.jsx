@@ -43,11 +43,11 @@ export default function LoginPage() {
           <LanguageToggle />
         </div>
         <div className="mb-6 text-center sm:mb-7">
-          <div className="mx-auto h-24 w-24 overflow-hidden rounded-[28px] border border-emerald-100 bg-white/90 shadow-lg shadow-emerald-900/10 sm:h-28 sm:w-28">
+          <div className="mx-auto h-28 w-28 sm:h-32 sm:w-32">
             <img
               src={LOGO_SRC}
               alt="Tealabs"
-              className="h-full w-full object-cover"
+              className="h-full w-full object-contain"
             />
           </div>
           <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50/90 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700">
